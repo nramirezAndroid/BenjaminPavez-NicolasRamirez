@@ -1,0 +1,1521 @@
+fileFormatVersion: 2
+guid: c490900287a69a34f8b6e150b315f04d
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 4224402322311732130
+    second: metroidvania_logo_0
+  - first:
+      213: -5629048584746266481
+    second: metroidvania_logo_1
+  - first:
+      213: 7839238045241690723
+    second: metroidvania_logo_2
+  - first:
+      213: -5792703542961510937
+    second: metroidvania_logo_3
+  - first:
+      213: -2964653780245128419
+    second: metroidvania_logo_4
+  - first:
+      213: 2397746978782115715
+    second: metroidvania_logo_5
+  - first:
+      213: 6293002421171694249
+    second: metroidvania_logo_6
+  - first:
+      213: 1210646988322838859
+    second: metroidvania_logo_7
+  - first:
+      213: -2765620141411374547
+    second: metroidvania_logo_8
+  - first:
+      213: 871809864594176088
+    second: metroidvania_logo_9
+  - first:
+      213: 6128246740185793599
+    second: metroidvania_logo_10
+  - first:
+      213: 3629570708140400370
+    second: metroidvania_logo_11
+  - first:
+      213: -9069617532034373620
+    second: metroidvania_logo_12
+  - first:
+      213: 6235074288411955363
+    second: metroidvania_logo_13
+  - first:
+      213: 6880102289344924707
+    second: metroidvania_logo_14
+  - first:
+      213: -9053431767991192536
+    second: metroidvania_logo_15
+  - first:
+      213: 8131480761941437118
+    second: metroidvania_logo_16
+  - first:
+      213: -7032654936093466798
+    second: metroidvania_logo_17
+  - first:
+      213: -8852483249892930946
+    second: metroidvania_logo_18
+  - first:
+      213: -7265880499224385066
+    second: metroidvania_logo_19
+  - first:
+      213: 6788237775491142073
+    second: metroidvania_logo_20
+  - first:
+      213: 3720248565645810760
+    second: metroidvania_logo_21
+  - first:
+      213: 6118880661826426944
+    second: metroidvania_logo_22
+  - first:
+      213: -4829149657930338782
+    second: metroidvania_logo_23
+  - first:
+      213: -814363900621312286
+    second: metroidvania_logo_24
+  - first:
+      213: -6201399407345489873
+    second: metroidvania_logo_25
+  - first:
+      213: -671732813543586486
+    second: metroidvania_logo_26
+  - first:
+      213: -4910087437310988284
+    second: metroidvania_logo_27
+  - first:
+      213: 6525115884082099696
+    second: metroidvania_logo_28
+  - first:
+      213: -4207463522051385426
+    second: metroidvania_logo_29
+  - first:
+      213: 7299485053132827450
+    second: metroidvania_logo_30
+  - first:
+      213: 3825979978442277928
+    second: metroidvania_logo_31
+  - first:
+      213: 4710523890204221227
+    second: metroidvania_logo_32
+  - first:
+      213: 7438761315210002730
+    second: metroidvania_logo_33
+  - first:
+      213: 5471109113719997530
+    second: metroidvania_logo_34
+  - first:
+      213: -1279149891787280992
+    second: metroidvania_logo_35
+  - first:
+      213: -1470856623794159042
+    second: metroidvania_logo_36
+  - first:
+      213: -6349374440124713230
+    second: metroidvania_logo_37
+  - first:
+      213: -6995668635512273706
+    second: metroidvania_logo_38
+  - first:
+      213: -6118824151444297015
+    second: metroidvania_logo_39
+  - first:
+      213: -6043818133906252961
+    second: metroidvania_logo_40
+  - first:
+      213: -6942345110792549397
+    second: metroidvania_logo_41
+  - first:
+      213: -2893147701553215893
+    second: metroidvania_logo_42
+  - first:
+      213: -7938788117560018697
+    second: metroidvania_logo_43
+  - first:
+      213: 6456871697243777095
+    second: metroidvania_logo_44
+  - first:
+      213: 5328512828093164880
+    second: metroidvania_logo_45
+  - first:
+      213: -7962236818752058969
+    second: metroidvania_logo_46
+  - first:
+      213: -5672458519906619884
+    second: metroidvania_logo_47
+  - first:
+      213: 3607449093128145651
+    second: metroidvania_logo_48
+  - first:
+      213: -3793261667007086407
+    second: metroidvania_logo_49
+  - first:
+      213: 8492916237959445682
+    second: metroidvania_logo_50
+  - first:
+      213: -7194054398705891420
+    second: metroidvania_logo_51
+  - first:
+      213: -2359665969612141187
+    second: metroidvania_logo_52
+  - first:
+      213: 1069231735221714407
+    second: metroidvania_logo_53
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 0
+    wrapV: 0
+    wrapW: 0
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 32
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: metroidvania_logo_0
+      rect:
+        serializedVersion: 2
+        x: 103
+        y: 289
+        width: 35
+        height: 95
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2abd9b1c78710aa30800000000000000
+      internalID: 4224402322311732130
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_1
+      rect:
+        serializedVersion: 2
+        x: 320
+        y: 289
+        width: 81
+        height: 87
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f8098cad22a91e1b0800000000000000
+      internalID: -5629048584746266481
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_2
+      rect:
+        serializedVersion: 2
+        x: 553
+        y: 263
+        width: 95
+        height: 102
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 36acb54d7719acc60800000000000000
+      internalID: 7839238045241690723
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_3
+      rect:
+        serializedVersion: 2
+        x: 783
+        y: 263
+        width: 115
+        height: 85
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7e5e1a891de2c9fa0800000000000000
+      internalID: -5792703542961510937
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_4
+      rect:
+        serializedVersion: 2
+        x: 1016
+        y: 265
+        width: 129
+        height: 77
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d1b5872281f6bd6d0800000000000000
+      internalID: -2964653780245128419
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_5
+      rect:
+        serializedVersion: 2
+        x: 1028
+        y: 341
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 387f2936c22864120800000000000000
+      internalID: 2397746978782115715
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_6
+      rect:
+        serializedVersion: 2
+        x: 1127
+        y: 341
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9aaac9c3c5c355750800000000000000
+      internalID: 6293002421171694249
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_7
+      rect:
+        serializedVersion: 2
+        x: 1240
+        y: 285
+        width: 161
+        height: 74
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b49116785051dc010800000000000000
+      internalID: 1210646988322838859
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_8
+      rect:
+        serializedVersion: 2
+        x: 1466
+        y: 274
+        width: 187
+        height: 85
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d2a628f522b8e99d0800000000000000
+      internalID: -2765620141411374547
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_9
+      rect:
+        serializedVersion: 2
+        x: 1710
+        y: 270
+        width: 179
+        height: 89
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 85831dae37a491c00800000000000000
+      internalID: 871809864594176088
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_10
+      rect:
+        serializedVersion: 2
+        x: 550
+        y: 330
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f3448bcf0f7eb0550800000000000000
+      internalID: 6128246740185793599
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_11
+      rect:
+        serializedVersion: 2
+        x: 644
+        y: 330
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2fe1fd92453de5230800000000000000
+      internalID: 3629570708140400370
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_12
+      rect:
+        serializedVersion: 2
+        x: 772
+        y: 323
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c08af6258ee322280800000000000000
+      internalID: -9069617532034373620
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_13
+      rect:
+        serializedVersion: 2
+        x: 902
+        y: 323
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3a057fcc70f678650800000000000000
+      internalID: 6235074288411955363
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_14
+      rect:
+        serializedVersion: 2
+        x: 1006
+        y: 317
+        width: 10
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 32c81ce64980b7f50800000000000000
+      internalID: 6880102289344924707
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_15
+      rect:
+        serializedVersion: 2
+        x: 1145
+        y: 317
+        width: 10
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 824f5ae26cfbb5280800000000000000
+      internalID: -9053431767991192536
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_16
+      rect:
+        serializedVersion: 2
+        x: 540
+        y: 315
+        width: 8
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: eba2179aba2d8d070800000000000000
+      internalID: 8131480761941437118
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_17
+      rect:
+        serializedVersion: 2
+        x: 653
+        y: 315
+        width: 8
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 25f5042a89df66e90800000000000000
+      internalID: -7032654936093466798
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_18
+      rect:
+        serializedVersion: 2
+        x: 776
+        y: 317
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e7a490ef269a52580800000000000000
+      internalID: -8852483249892930946
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_19
+      rect:
+        serializedVersion: 2
+        x: 896
+        y: 317
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6d9ea47ae286a2b90800000000000000
+      internalID: -7265880499224385066
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_20
+      rect:
+        serializedVersion: 2
+        x: 781
+        y: 299
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9b1990b8a4aa43e50800000000000000
+      internalID: 6788237775491142073
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_21
+      rect:
+        serializedVersion: 2
+        x: 893
+        y: 299
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 84c99771c5af0a330800000000000000
+      internalID: 3720248565645810760
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_22
+      rect:
+        serializedVersion: 2
+        x: 347
+        y: 284
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 048db2fea81aae450800000000000000
+      internalID: 6118880661826426944
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_23
+      rect:
+        serializedVersion: 2
+        x: 367
+        y: 284
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 22eecd7d8f96bfcb0800000000000000
+      internalID: -4829149657930338782
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_24
+      rect:
+        serializedVersion: 2
+        x: 1509
+        y: 282
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2eea099d85cc2b4f0800000000000000
+      internalID: -814363900621312286
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_25
+      rect:
+        serializedVersion: 2
+        x: 27
+        y: 137
+        width: 187
+        height: 94
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f28aade681430f9a0800000000000000
+      internalID: -6201399407345489873
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_26
+      rect:
+        serializedVersion: 2
+        x: 276
+        y: 152
+        width: 168
+        height: 76
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a45c2c8a0968da6f0800000000000000
+      internalID: -671732813543586486
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_27
+      rect:
+        serializedVersion: 2
+        x: 517
+        y: 152
+        width: 166
+        height: 76
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 40078f29d7ddbdbb0800000000000000
+      internalID: -4910087437310988284
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_28
+      rect:
+        serializedVersion: 2
+        x: 757
+        y: 152
+        width: 166
+        height: 76
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0f5f8f4335edd8a50800000000000000
+      internalID: 6525115884082099696
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_29
+      rect:
+        serializedVersion: 2
+        x: 997
+        y: 148
+        width: 166
+        height: 80
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ea796b208361c95c0800000000000000
+      internalID: -4207463522051385426
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_30
+      rect:
+        serializedVersion: 2
+        x: 1006
+        y: 147
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a3b61434bfafc4560800000000000000
+      internalID: 7299485053132827450
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_31
+      rect:
+        serializedVersion: 2
+        x: 1237
+        y: 138
+        width: 166
+        height: 91
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8240fccf48c981530800000000000000
+      internalID: 3825979978442277928
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_32
+      rect:
+        serializedVersion: 2
+        x: 1477
+        y: 137
+        width: 166
+        height: 91
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b2f1d9d45842f5140800000000000000
+      internalID: 4710523890204221227
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_33
+      rect:
+        serializedVersion: 2
+        x: 1717
+        y: 135
+        width: 166
+        height: 95
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a218202010acb3760800000000000000
+      internalID: 7438761315210002730
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_34
+      rect:
+        serializedVersion: 2
+        x: 1076
+        y: 136
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a54cea270c84deb40800000000000000
+      internalID: 5471109113719997530
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_35
+      rect:
+        serializedVersion: 2
+        x: 116
+        y: 95
+        width: 7
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0ad2a8d53fb8f3ee0800000000000000
+      internalID: -1279149891787280992
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_36
+      rect:
+        serializedVersion: 2
+        x: 356
+        y: 99
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e32083f81b7769be0800000000000000
+      internalID: -1470856623794159042
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_37
+      rect:
+        serializedVersion: 2
+        x: 540
+        y: 94
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2f6fb6e469d72e7a0800000000000000
+      internalID: -6349374440124713230
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_38
+      rect:
+        serializedVersion: 2
+        x: 597
+        y: 99
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6d403fdc0746aee90800000000000000
+      internalID: -6995668635512273706
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_39
+      rect:
+        serializedVersion: 2
+        x: 638
+        y: 93
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9cae41a6ad1951ba0800000000000000
+      internalID: -6118824151444297015
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_40
+      rect:
+        serializedVersion: 2
+        x: 757
+        y: 13
+        width: 166
+        height: 94
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f5b1471cd6b002ca0800000000000000
+      internalID: -6043818133906252961
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_41
+      rect:
+        serializedVersion: 2
+        x: 997
+        y: 15
+        width: 166
+        height: 88
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: beb4a0367e5d7af90800000000000000
+      internalID: -6942345110792549397
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_42
+      rect:
+        serializedVersion: 2
+        x: 1237
+        y: 20
+        width: 166
+        height: 84
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b66ce267e7979d7d0800000000000000
+      internalID: -2893147701553215893
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_43
+      rect:
+        serializedVersion: 2
+        x: 37
+        y: 16
+        width: 166
+        height: 79
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7f83eb1c442c3d190800000000000000
+      internalID: -7938788117560018697
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_44
+      rect:
+        serializedVersion: 2
+        x: 277
+        y: 15
+        width: 166
+        height: 77
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7482d72499a6b9950800000000000000
+      internalID: 6456871697243777095
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_45
+      rect:
+        serializedVersion: 2
+        x: 300
+        y: 90
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 05dea9b7f2ea2f940800000000000000
+      internalID: 5328512828093164880
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_46
+      rect:
+        serializedVersion: 2
+        x: 315
+        y: 88
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7a94fb09cc3708190800000000000000
+      internalID: -7962236818752058969
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_47
+      rect:
+        serializedVersion: 2
+        x: 398
+        y: 90
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 41ee3d5b7016741b0800000000000000
+      internalID: -5672458519906619884
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_48
+      rect:
+        serializedVersion: 2
+        x: 517
+        y: 14
+        width: 166
+        height: 78
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3fa453d46db301230800000000000000
+      internalID: 3607449093128145651
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_49
+      rect:
+        serializedVersion: 2
+        x: 554
+        y: 90
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9b0cfe58c90ab5bc0800000000000000
+      internalID: -3793261667007086407
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_50
+      rect:
+        serializedVersion: 2
+        x: 1246
+        y: 18
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2bc38be2256ecd570800000000000000
+      internalID: 8492916237959445682
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_51
+      rect:
+        serializedVersion: 2
+        x: 1390
+        y: 19
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4a78c4ed3a5992c90800000000000000
+      internalID: -7194054398705891420
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_52
+      rect:
+        serializedVersion: 2
+        x: 1077
+        y: 8
+        width: 8
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d7dc0bc7d48c04fd0800000000000000
+      internalID: -2359665969612141187
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: metroidvania_logo_53
+      rect:
+        serializedVersion: 2
+        x: 1317
+        y: 7
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7edf670299ca6de00800000000000000
+      internalID: 1069231735221714407
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      metroidvania_logo_0: 4224402322311732130
+      metroidvania_logo_1: -5629048584746266481
+      metroidvania_logo_10: 6128246740185793599
+      metroidvania_logo_11: 3629570708140400370
+      metroidvania_logo_12: -9069617532034373620
+      metroidvania_logo_13: 6235074288411955363
+      metroidvania_logo_14: 6880102289344924707
+      metroidvania_logo_15: -9053431767991192536
+      metroidvania_logo_16: 8131480761941437118
+      metroidvania_logo_17: -7032654936093466798
+      metroidvania_logo_18: -8852483249892930946
+      metroidvania_logo_19: -7265880499224385066
+      metroidvania_logo_2: 7839238045241690723
+      metroidvania_logo_20: 6788237775491142073
+      metroidvania_logo_21: 3720248565645810760
+      metroidvania_logo_22: 6118880661826426944
+      metroidvania_logo_23: -4829149657930338782
+      metroidvania_logo_24: -814363900621312286
+      metroidvania_logo_25: -6201399407345489873
+      metroidvania_logo_26: -671732813543586486
+      metroidvania_logo_27: -4910087437310988284
+      metroidvania_logo_28: 6525115884082099696
+      metroidvania_logo_29: -4207463522051385426
+      metroidvania_logo_3: -5792703542961510937
+      metroidvania_logo_30: 7299485053132827450
+      metroidvania_logo_31: 3825979978442277928
+      metroidvania_logo_32: 4710523890204221227
+      metroidvania_logo_33: 7438761315210002730
+      metroidvania_logo_34: 5471109113719997530
+      metroidvania_logo_35: -1279149891787280992
+      metroidvania_logo_36: -1470856623794159042
+      metroidvania_logo_37: -6349374440124713230
+      metroidvania_logo_38: -6995668635512273706
+      metroidvania_logo_39: -6118824151444297015
+      metroidvania_logo_4: -2964653780245128419
+      metroidvania_logo_40: -6043818133906252961
+      metroidvania_logo_41: -6942345110792549397
+      metroidvania_logo_42: -2893147701553215893
+      metroidvania_logo_43: -7938788117560018697
+      metroidvania_logo_44: 6456871697243777095
+      metroidvania_logo_45: 5328512828093164880
+      metroidvania_logo_46: -7962236818752058969
+      metroidvania_logo_47: -5672458519906619884
+      metroidvania_logo_48: 3607449093128145651
+      metroidvania_logo_49: -3793261667007086407
+      metroidvania_logo_5: 2397746978782115715
+      metroidvania_logo_50: 8492916237959445682
+      metroidvania_logo_51: -7194054398705891420
+      metroidvania_logo_52: -2359665969612141187
+      metroidvania_logo_53: 1069231735221714407
+      metroidvania_logo_6: 6293002421171694249
+      metroidvania_logo_7: 1210646988322838859
+      metroidvania_logo_8: -2765620141411374547
+      metroidvania_logo_9: 871809864594176088
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
