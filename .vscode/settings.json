@@ -67,6 +67,6 @@
         "*.sln": "*.csproj",
         "*.slnx": "*.csproj"
     },
-    "dotnet.defaultSolution": "ProyectoVideojuegos-main.slnx",
+    "dotnet.defaultSolution": "BenjaminPavez-NicolasRamirez-main.slnx",
     "dotnet.enableWorkspaceBasedDevelopment": false
 }
