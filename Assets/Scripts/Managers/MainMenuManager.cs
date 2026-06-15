@@ -1,3 +1,5 @@
+using System.Net;
+using System.Net.Sockets;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -7,12 +9,21 @@ public class MainMenuManager : MonoBehaviour
 {
     [Header("Paneles del Menú")]
     public GameObject panelMenuPrincipal;
-
     public GameObject panelConfirmacion;
-
     public OptionsManager panelOpciones;
-
     public GameObject panelScoreboard;
+    
+    [Header("Panel de Red (Multijugador)")]
+    public GameObject panelNetwork; 
+
+    [Header("Sub-Paneles de Red")]
+    public GameObject panelBotonesMultiplayer;
+    
+    public GameObject panelHostWait;      //Pantalla para mostrar la IP al Host
+    public TextMeshProUGUI textoIPHost;   //Texto donde mostraremos su IP
+    
+    public GameObject panelClientJoin;    //Pantalla para que el Cliente escriba
+    public TMP_InputField inputIPCliente; //Campo donde el cliente escribe la IP
 
     [Header("Scoreboard")]
     public GameObject filaPrefab; 
@@ -22,7 +33,6 @@ public class MainMenuManager : MonoBehaviour
     public Button nuevaPartidaButton;
     public Button continuarButton;
     public Button opcionesButton;   
-
     public Button salirButton;
 
     [Header("Botones de Confirmación")]
@@ -31,6 +41,7 @@ public class MainMenuManager : MonoBehaviour
 
     [Header("Escenas")]
     public int primerNivelIndex = 1;
+
     void Start()
     {
         Time.timeScale = 1f;
@@ -42,11 +53,16 @@ public class MainMenuManager : MonoBehaviour
 
         ActualizarBotones();
 
-        //Estado inicial de los paneles
         if (panelMenuPrincipal != null) panelMenuPrincipal.SetActive(true);
         if (panelConfirmacion  != null) panelConfirmacion.SetActive(false);
         if (panelOpciones      != null) panelOpciones.gameObject.SetActive(false);
         if (panelScoreboard    != null) panelScoreboard.SetActive(false);
+        if (panelNetwork       != null) panelNetwork.SetActive(false); 
+        
+        //Asegurarnos de que los sub-paneles estén apagados al inicio
+        if (panelBotonesMultiplayer != null) panelBotonesMultiplayer.SetActive(false);
+        if (panelHostWait      != null) panelHostWait.SetActive(false);
+        if (panelClientJoin    != null) panelClientJoin.SetActive(false);
     }
 
     public void NuevaPartida()
@@ -57,13 +73,13 @@ public class MainMenuManager : MonoBehaviour
             return;
         }
 
-        //Si hay guardado se muestra la confirmación
         if (panelConfirmacion  != null) panelConfirmacion.SetActive(true);
         if (panelMenuPrincipal != null) panelMenuPrincipal.SetActive(false);
     }
 
     public void ConfirmarNuevaPartida()
     {
+        if (panelConfirmacion != null) panelConfirmacion.SetActive(false);
         IniciarNuevaPartida();
     }
 
@@ -83,14 +99,8 @@ public class MainMenuManager : MonoBehaviour
             SaveSystem.instance.isLoadingGame = false;
         }
 
-        if (LoadingScreenManager.Instance != null)
-        {
-            LoadingScreenManager.Instance.LoadScene(primerNivelIndex);
-        }
-        else
-        {
-            SceneManager.LoadScene(primerNivelIndex);
-        }
+        NetworkModeData.modoSeleccionado = NetworkModeData.Mode.Solitario;
+        EjecutarCargaDeNivel(primerNivelIndex);
     }
 
     public void Continuar()
@@ -103,13 +113,95 @@ public class MainMenuManager : MonoBehaviour
         SaveSystem.instance.pendingLoad   = data;
         SaveSystem.instance.isLoadingGame = true;
 
+        NetworkModeData.modoSeleccionado = NetworkModeData.Mode.Solitario;
+        EjecutarCargaDeNivel(data.sceneIndex);
+    }
+
+
+
+    public void AbrirPanelMultijugador()
+    {
+        if (panelMenuPrincipal != null) panelMenuPrincipal.SetActive(false);
+        if (panelNetwork != null) panelNetwork.SetActive(true);
+        
+        if (panelBotonesMultiplayer != null) panelBotonesMultiplayer.SetActive(true);
+        if (panelHostWait != null) panelHostWait.SetActive(false);
+        if (panelClientJoin != null) panelClientJoin.SetActive(false);
+    }
+
+    public void CerrarPanelMultijugador() 
+    {
+        if (panelNetwork != null) panelNetwork.SetActive(false);
+        if (panelBotonesMultiplayer != null) panelBotonesMultiplayer.SetActive(false);
+        if (panelHostWait != null) panelHostWait.SetActive(false);
+        if (panelClientJoin != null) panelClientJoin.SetActive(false);
+        
+        if (panelMenuPrincipal != null) panelMenuPrincipal.SetActive(true);
+    }
+
+    public void VolverSeleccionMultiplayer()
+    {
+        if (panelHostWait != null) panelHostWait.SetActive(false);
+        if (panelClientJoin != null) panelClientJoin.SetActive(false);
+        
+        if (panelBotonesMultiplayer != null) panelBotonesMultiplayer.SetActive(true);
+    }
+
+    public void AbrirPantallaHost()
+    {
+        //Apagamos los botones iniciales ("Create Lobby", "Join Lobby", etc.)
+        if (panelBotonesMultiplayer != null) panelBotonesMultiplayer.SetActive(false);
+        
+        if (panelHostWait != null) panelHostWait.SetActive(true);
+        if (textoIPHost != null) textoIPHost.text = "Tu IP es: " + ObtenerIPLocal();
+    }
+
+    public void ConfirmarHost()
+    {
+        NetworkModeData.modoSeleccionado = NetworkModeData.Mode.Host;
+        EjecutarCargaDeNivel(primerNivelIndex);
+    }
+
+    public void AbrirPantallaCliente()
+    {
+        //Apagamos los botones iniciales
+        if (panelBotonesMultiplayer != null) panelBotonesMultiplayer.SetActive(false);
+        
+        if (panelClientJoin != null) panelClientJoin.SetActive(true);
+    }
+
+    public void ConfirmarCliente()
+    {
+        NetworkModeData.modoSeleccionado = NetworkModeData.Mode.Cliente;
+        
+        string ipIngresada = inputIPCliente.text.Trim();
+        NetworkModeData.ipDelHost = string.IsNullOrEmpty(ipIngresada) ? "127.0.0.1" : ipIngresada;
+        
+        EjecutarCargaDeNivel(primerNivelIndex); 
+    }
+
+    private string ObtenerIPLocal()
+    {
+        var host = Dns.GetHostEntry(Dns.GetHostName());
+        foreach (var ip in host.AddressList)
+        {
+            if (ip.AddressFamily == AddressFamily.InterNetwork)
+            {
+                return ip.ToString();
+            }
+        }
+        return "127.0.0.1";
+    }
+
+    private void EjecutarCargaDeNivel(int indexEscena)
+    {
         if (LoadingScreenManager.Instance != null)
         {
-            LoadingScreenManager.Instance.LoadScene(data.sceneIndex);
+            LoadingScreenManager.Instance.LoadScene(indexEscena);
         }
         else
         {
-            SceneManager.LoadScene(data.sceneIndex);
+            SceneManager.LoadScene(indexEscena);
         }
     }
 
@@ -124,6 +216,7 @@ public class MainMenuManager : MonoBehaviour
         if (panelOpciones      != null) panelOpciones.CloseOptions();
         if (panelMenuPrincipal != null) panelMenuPrincipal.SetActive(true);
     }
+
     public void Salir()
     {
         Debug.Log("Saliendo del juego...");
@@ -144,27 +237,19 @@ public class MainMenuManager : MonoBehaviour
 
     public void MostrarScoreboard()
     {
-        
         if (panelMenuPrincipal != null) panelMenuPrincipal.SetActive(false);
         if (panelScoreboard != null) panelScoreboard.SetActive(true);
-        // ----------------------------------------------
 
-        //Limpia las filas antiguas para que no se dupliquen al abrir y cerrar el menú
         foreach (Transform child in contentContenedor)
         {
             Destroy(child.gameObject);
         }
 
-        //Comprueba que el sistema de récords exista
         if (RecordSystem.instance == null) return;
 
-        //Crea las filas en base a los datos guardados
         foreach (var record in RecordSystem.instance.GetAll())
         {
-            //Clona el molde dentro del contenedor 'Content'
             GameObject nuevaFila = Instantiate(filaPrefab, contentContenedor);
-        
-            //Obtiene los dos componentes TextMeshPro de la fila clonada
             TextMeshProUGUI[] textos = nuevaFila.GetComponentsInChildren<TextMeshProUGUI>();
         
             if (textos.Length >= 2)
@@ -176,6 +261,7 @@ public class MainMenuManager : MonoBehaviour
             }
         }
     }
+
     public void CerrarScoreboard()
     {
         if (panelScoreboard != null) panelScoreboard.SetActive(false);

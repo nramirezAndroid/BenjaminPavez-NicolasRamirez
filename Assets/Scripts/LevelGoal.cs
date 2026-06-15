@@ -13,102 +13,99 @@ public class LevelGoal : MonoBehaviour
 
     [Header("Configuración de Destino")]
     public string nombreSiguienteNivel = "Masmorra_Nivel2"; 
-    
     public bool cargarAlInstante = false;
 
     private SpriteRenderer spriteRenderer;
     private bool estaDesbloqueada = false;
 
+    private bool hasTriggered = false;
+
     void Start()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
 
-        //Asegura que la nota esté oculta al iniciar
         if (textoAviso != null) textoAviso.gameObject.SetActive(false);
 
         if (bossRequerido == null)
-        {
             DesbloquearMeta();
-        }
         else
-        {
             if (spriteRenderer != null) spriteRenderer.color = new Color(1f, 1f, 1f, 0.3f);
-        }
     }
 
     void Update()
     {
         if (!estaDesbloqueada && bossRequerido == null)
-        {
             DesbloquearMeta();
-        }
     }
 
     private void DesbloquearMeta()
     {
         estaDesbloqueada = true;
         if (spriteRenderer != null) spriteRenderer.color = Color.white;
-        
-        //Si el jugador estaba tocando la meta justo cuando el jefe muere, ses oculta el aviso
         if (textoAviso != null) textoAviso.gameObject.SetActive(false);
     }
 
- 
-    //Se activa al entrar a la meta
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (collision.CompareTag("Player"))
+        if (!collision.CompareTag("Player")) return;
+
+        if (estaDesbloqueada)
         {
-            if (estaDesbloqueada)
+            if (hasTriggered) return;
+            hasTriggered = true;
+
+            //Notifica al GameManager (congela tiempo, muestra pantalla de victoria)
+            if (GameManager.instance != null)
+                GameManager.instance.WinLevel();
+
+            //RecordSystem persiste entre sesiones y solo sobreescribe si es mejor tiempo.
+            if (RecordSystem.instance != null && GameManager.instance != null)
             {
-                if (GameManager.instance != null)
-                {
-                    GameManager.instance.WinLevel();
-                }
+                int sceneIdx   = SceneManager.GetActiveScene().buildIndex;
+                string sceneName = SceneManager.GetActiveScene().name;
+                bool esRecord  = RecordSystem.instance.TrySetRecord(
+                    sceneIdx, sceneName, GameManager.instance.ElapsedTime);
 
-                Rigidbody2D playerRb = collision.GetComponent<Rigidbody2D>();
-                if (playerRb != null)
-                {
-                    playerRb.linearVelocity = Vector2.zero; 
-                    playerRb.bodyType = RigidbodyType2D.Static; 
-                }
-
-                if (cargarAlInstante)
-                {
-                    Time.timeScale = 1f; 
-                    if (LoadingScreenManager.Instance != null)
-                    {
-                        LoadingScreenManager.Instance.LoadScene(nombreSiguienteNivel);
-                    }
-                    else
-                    {
-                        SceneManager.LoadScene(nombreSiguienteNivel);
-                    }
-                }
+                if (esRecord)
+                    Debug.Log($"🏆 ¡Nuevo récord en {sceneName}: {GameManager.instance.GetTimeString()}!");
             }
-            else
+
+            //Notifica al CoopManager la victoria compartida de ambos jugadores
+            if (CoopManager.instance != null && GameManager.instance != null)
             {
-                //Si la meta esta bloqueada muestra la nota
-                if (textoAviso != null)
-                {
-                    textoAviso.text = mensaje;
-                    textoAviso.gameObject.SetActive(true);
-                }
+                CoopManager.instance.OnGoalReached(GameManager.instance.ElapsedTime);
+            }
+
+            //Detiene físicamente al jugador
+            Rigidbody2D playerRb = collision.GetComponent<Rigidbody2D>();
+            if (playerRb != null)
+            {
+                playerRb.linearVelocity = Vector2.zero; 
+                playerRb.bodyType       = RigidbodyType2D.Static; 
+            }
+
+            if (cargarAlInstante)
+            {
+                Time.timeScale = 1f; 
+                if (LoadingScreenManager.Instance != null)
+                    LoadingScreenManager.Instance.LoadScene(nombreSiguienteNivel);
+                else
+                    SceneManager.LoadScene(nombreSiguienteNivel);
+            }
+        }
+        else
+        {
+            if (textoAviso != null)
+            {
+                textoAviso.text = mensaje;
+                textoAviso.gameObject.SetActive(true);
             }
         }
     }
 
-    //Se activa al salir de la meta
     private void OnTriggerExit2D(Collider2D collision)
     {
-
         if (collision.CompareTag("Player"))
-        {
-            //Oculta la nota
-            if (textoAviso != null)
-            {
-                textoAviso.gameObject.SetActive(false);
-            }
-        }
+            if (textoAviso != null) textoAviso.gameObject.SetActive(false);
     }
 }

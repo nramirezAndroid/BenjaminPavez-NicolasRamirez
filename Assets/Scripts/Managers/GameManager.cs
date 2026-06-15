@@ -87,7 +87,7 @@ public class GameManager : MonoBehaviour
     {
         elapsedTime += cantidad;
         
-        // Evitamos que el tiempo sea negativo
+        //Evitamos que el tiempo sea negativo
         if (elapsedTime < 0f)
         {
             elapsedTime = 0f;

@@ -1,10 +1,11 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
+using Unity.Netcode;
 
 [RequireComponent(typeof(Rigidbody2D))]
 [RequireComponent(typeof(CapsuleCollider2D))]
-public class PlayerControllerComplete : MonoBehaviour
+public class PlayerControllerComplete : NetworkBehaviour
 {
     [Header("UI del Jugador")]
     public Image healthImage;       
@@ -65,6 +66,12 @@ public class PlayerControllerComplete : MonoBehaviour
     [SerializeField] private int maxHealth = 100;
     [SerializeField] private float voidYThreshold = -20f;
 
+    public NetworkVariable<int> networkHealth = new NetworkVariable<int>(
+        100, 
+        NetworkVariableReadPermission.Everyone, 
+        NetworkVariableWritePermission.Server
+    );
+
     [Header("Knockback")]
     [SerializeField] private float knockbackForceX = 8f;
     [SerializeField] private float knockbackForceY = 5f;
@@ -97,7 +104,6 @@ public class PlayerControllerComplete : MonoBehaviour
     private float jumpHoldTimer;
     private bool  isJumping;
 
-    private int   currentHealth;
     private bool isDead;
 
     private Vector3 spawnPosition;
@@ -105,7 +111,34 @@ public class PlayerControllerComplete : MonoBehaviour
     private float   originalColliderOffsetY;
     public bool isTalking = false;
     private PlayerEffectsController fxController;
+
+
+    private float baseWalkSpeed;      //Velocidad original sin buffo
+    private int   baseAttackDamage;   //Daño original sin buffo
+    private Coroutine speedBuffCoroutine;
+    private Coroutine damageBuffCoroutine;
+    private SpriteRenderer spriteRenderer;
     
+    public override void OnNetworkSpawn()
+    {
+        if (IsServer)
+        {
+            
+            if (SaveSystem.instance != null && SaveSystem.instance.pendingLoad != null)
+            {
+                SaveData data = SaveSystem.instance.pendingLoad;
+                
+                //Restaura vida
+                networkHealth.Value = data.playerHealth;
+                Debug.Log("Partida Cargada - Jugador posicionado con vida: " + networkHealth.Value);
+            }
+            else
+            {
+                networkHealth.Value = maxHealth;
+            }
+        }
+    }
+
     void Start()
     {
         rb              = GetComponent<Rigidbody2D>();
@@ -126,23 +159,46 @@ public class PlayerControllerComplete : MonoBehaviour
             
             //Restaura posición
             transform.position = new Vector3(data.playerX, data.playerY, transform.position.z);
-            
-            //Restaura vida
-            currentHealth = data.playerHealth;
-            
-            Debug.Log("Partida Cargada - Jugador posicionado en: " + transform.position + " con vida: " + currentHealth);
-        }
-        else
-        {
-            currentHealth = maxHealth;
         }
 
         spawnPosition = transform.position;
+
+        //Guardamos los valores base para poder restaurarlos tras un buffo
+        baseWalkSpeed    = walkSpeed;
+        baseAttackDamage = attackDamage;
+        spriteRenderer   = GetComponent<SpriteRenderer>();
     }
 
     void Update()
     {
         if (isDead || (GameManager.instance != null && GameManager.instance.isPaused)) return;
+        if (Time.timeScale == 0f) return;
+        if (IsOwner)
+        {
+            if (healthImage != null)
+            {
+                healthImage.fillAmount = (float)networkHealth.Value / maxHealth;
+            }
+
+            if (dashChargesText != null)
+            {
+                dashChargesText.text = currentSprintCharges.ToString();
+            }
+
+            if (dashCooldownImage != null)
+            {
+                if (currentSprintCharges == maxSprintCharges)
+                {
+                    dashCooldownImage.fillAmount = 0f; 
+                }
+                else
+                {
+                    dashCooldownImage.fillAmount = sprintCooldownTimer / sprintCooldown;
+                }
+            }
+        }
+
+        if (!IsOwner) return;
 
         if (isTalking)
         {
@@ -187,32 +243,12 @@ public class PlayerControllerComplete : MonoBehaviour
             isJumping = false;
         }
 
-        if (healthImage != null)
-        {
-            healthImage.fillAmount = (float)currentHealth / maxHealth;
-        }
-
-        if (dashChargesText != null)
-        {
-            dashChargesText.text = currentSprintCharges.ToString();
-        }
-
-        if (dashCooldownImage != null)
-        {
-            if (currentSprintCharges == maxSprintCharges)
-            {
-                dashCooldownImage.fillAmount = 0f; 
-            }
-            else
-            {
-                dashCooldownImage.fillAmount = sprintCooldownTimer / sprintCooldown;
-            }
-        }
+        CheckVoid();
     }
 
     void FixedUpdate()
     {
-        if (isDead || (GameManager.instance != null && GameManager.instance.isPaused) || isTalking) return;
+        if (isDead || (GameManager.instance != null && GameManager.instance.isPaused) || isTalking || !IsOwner) return;
 
         Move();
         ApplyJumpHold();
@@ -284,7 +320,6 @@ public class PlayerControllerComplete : MonoBehaviour
         //Detecta el botón de golpe
         if (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.J))
         {
-
             if (Time.time >= nextAttackTime)
             {
                 Attack();
@@ -447,25 +482,94 @@ public class PlayerControllerComplete : MonoBehaviour
         Collider2D[] hits = Physics2D.OverlapCircleAll(attackPoint.position, attackRange, enemyLayers);
         foreach (Collider2D enemy in hits)
         {
-            EnemyBase enemyScript = enemy.GetComponent<EnemyBase>();
+            NetworkObject enemyNetObj = enemy.GetComponent<NetworkObject>();
+            if (enemyNetObj != null)
+            {
+                ApplyDamageServerRpc(enemyNetObj.NetworkObjectId, attackDamage);
+            }
+            else 
+            {
+                EnemyBase enemyScript = enemy.GetComponent<EnemyBase>();
+                if (enemyScript != null) enemyScript.TakeDamage(attackDamage, transform); 
+            }
+        }
+    }
+
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void ApplyDamageServerRpc(ulong targetNetworkId, int damage)
+    {
+        if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(targetNetworkId, out NetworkObject target))
+        {
+            EnemyBase enemyScript = target.GetComponent<EnemyBase>();
             if (enemyScript != null)
             {
-                enemyScript.TakeDamage(attackDamage, transform); 
+                enemyScript.TakeDamage(damage, transform); 
             }
         }
     }
 
     public void TakeDamage(int damage, Transform damageSource = null)
     {
-        soundCtrl.PlayRecibirDano();
-        if (isDead) return;
+        if (!IsServer || isDead) return;
 
-        currentHealth = Mathf.Max(0, currentHealth - damage);
+        networkHealth.Value = Mathf.Max(0, networkHealth.Value - damage);
+        
+        Vector3 sourcePos = damageSource != null ? damageSource.position : Vector3.zero;
+        TakeDamageClientRpc(sourcePos);
+
+        if (networkHealth.Value <= 0) DieClientRpc();
+    }
+
+    [ClientRpc]
+    private void TakeDamageClientRpc(Vector3 sourcePosition)
+    {
+        soundCtrl.PlayRecibirDano();
         if (animator != null) animator.SetTrigger("Hurt");
 
-        if (damageSource != null) StartCoroutine(KnockbackRoutine(damageSource));
+        if (sourcePosition != Vector3.zero && IsOwner) 
+        {
+            GameObject tempSource = new GameObject();
+            tempSource.transform.position = sourcePosition;
+            StartCoroutine(KnockbackRoutine(tempSource.transform));
+            Destroy(tempSource, knockbackDuration + 0.1f);
+        }
+    }
 
-        if (currentHealth <= 0) Die();
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if(collision.gameObject.CompareTag("Damage"))
+        {
+            if (IsOwner) RequestTakeDamageServerRpc(5);
+        }
+    }
+
+    [ServerRpc]
+    private void RequestTakeDamageServerRpc(int damage)
+    {
+        TakeDamage(damage);
+    }
+
+    [ClientRpc]
+    private void DieClientRpc()
+    {
+        soundCtrl.PlayMuerte();
+        isDead = true;
+
+        if (GameManager.instance != null && IsServer)
+        {
+            GameManager.instance.ModificarTiempo(90f); 
+        }
+
+        //Notificamos al CoopManager que P1 murió
+        if (IsServer && CoopManager.instance != null)
+        {
+            CoopManager.instance.OnPlayer1Died();
+        }
+
+        if (animator != null) animator.SetTrigger("Die");
+        rb.linearVelocity = Vector2.zero;
+        
+        if (IsOwner) StartCoroutine(DeathRespawnRoutine());
     }
 
     private IEnumerator KnockbackRoutine(Transform source)
@@ -479,45 +583,23 @@ public class PlayerControllerComplete : MonoBehaviour
         isKnockedBack = false;
     }
 
-    private void OnCollisionEnter2D(Collision2D collision)
-    {
-        if(collision.gameObject.tag == "Damage")
-        {
-            TakeDamage(5, collision.transform);
-        }
-    }
-
-    private void Die()
-    {
-        soundCtrl.PlayMuerte();
-        isDead = true;
-
-        
-        if (GameManager.instance != null)
-        {
-            GameManager.instance.ModificarTiempo(90f); 
-        }
-
-        if (animator != null) animator.SetTrigger("Die");
-        rb.linearVelocity = Vector2.zero;
-        StartCoroutine(DeathRespawnRoutine());
-    }
-
     private IEnumerator DeathRespawnRoutine()
     {
         yield return new WaitForSeconds(1.5f);
-        Respawn();
+        RequestRespawnServerRpc();
     }
 
-    private void CheckVoid()
+    [ServerRpc]
+    private void RequestRespawnServerRpc()
     {
-        if (transform.position.y < voidYThreshold) Respawn();
+        networkHealth.Value = maxHealth;
+        RespawnClientRpc();
     }
 
-    private void Respawn()
+    [ClientRpc]
+    private void RespawnClientRpc()
     {
         isDead         = false;
-        currentHealth  = maxHealth;
         jumpsRemaining = maxJumps;
         isJumping      = false;
         isCrouching    = false;
@@ -525,11 +607,21 @@ public class PlayerControllerComplete : MonoBehaviour
         currentSprintCharges = maxSprintCharges;
         sprintCooldownTimer  = sprintCooldown;
 
+        //Cancelamos cualquier buffo activo al morir
+        if (speedBuffCoroutine  != null) { StopCoroutine(speedBuffCoroutine);  speedBuffCoroutine  = null; }
+        if (damageBuffCoroutine != null) { StopCoroutine(damageBuffCoroutine); damageBuffCoroutine = null; }
+        walkSpeed    = baseWalkSpeed;
+        attackDamage = baseAttackDamage;
+        if (spriteRenderer != null) spriteRenderer.color = Color.white;
+
         capsuleCollider.size   = new Vector2(capsuleCollider.size.x, originalColliderHeight);
         capsuleCollider.offset = new Vector2(capsuleCollider.offset.x, originalColliderOffsetY);
 
-        rb.linearVelocity  = Vector2.zero;
-        transform.position = spawnPosition;
+        if (IsOwner) 
+        {
+            rb.linearVelocity  = Vector2.zero;
+            transform.position = spawnPosition;
+        }
 
         if (animator != null)
         {
@@ -537,6 +629,11 @@ public class PlayerControllerComplete : MonoBehaviour
             animator.SetBool("IsFalling",   false);
             animator.Play("idle");          
         }
+    }
+
+    private void CheckVoid()
+    {
+        if (transform.position.y < voidYThreshold && !isDead) RequestTakeDamageServerRpc(999);
     }
 
     private IEnumerator SprintRoutine()
@@ -570,10 +667,67 @@ public class PlayerControllerComplete : MonoBehaviour
         animator.SetBool("IsCrouching", isCrouching);
     }
 
-    public int  CurrentHealth => currentHealth;
+    public int  CurrentHealth => networkHealth.Value;
     public int  MaxHealth     => maxHealth;
     public bool IsDead        => isDead;
     public int  CurrentSprintCharges => currentSprintCharges; 
+
+
+    public void ApplySpeedBuff(float multiplier, float duration)
+    {
+        if (speedBuffCoroutine != null) StopCoroutine(speedBuffCoroutine);
+        speedBuffCoroutine = StartCoroutine(SpeedBuffRoutine(multiplier, duration));
+    }
+
+    private IEnumerator SpeedBuffRoutine(float multiplier, float duration)
+    {
+        walkSpeed = baseWalkSpeed * multiplier;
+        if (spriteRenderer != null) spriteRenderer.color = new Color(0.4f, 0.8f, 1f);
+
+        yield return new WaitForSeconds(duration);
+
+        walkSpeed = baseWalkSpeed;
+        if (spriteRenderer != null) spriteRenderer.color = Color.white;
+        speedBuffCoroutine = null;
+    }
+    public void ApplyDamageBuff(float multiplier, float duration)
+    {
+        if (damageBuffCoroutine != null) StopCoroutine(damageBuffCoroutine);
+        damageBuffCoroutine = StartCoroutine(DamageBuffRoutine(multiplier, duration));
+    }
+
+    private IEnumerator DamageBuffRoutine(float multiplier, float duration)
+    {
+        attackDamage = Mathf.RoundToInt(baseAttackDamage * multiplier);
+        if (spriteRenderer != null) spriteRenderer.color = new Color(1f, 0.5f, 0.2f);
+
+        yield return new WaitForSeconds(duration);
+
+        attackDamage = baseAttackDamage;
+        if (spriteRenderer != null) spriteRenderer.color = Color.white;
+        damageBuffCoroutine = null;
+    }
+    public void Heal(int amount)
+    {
+        if (!IsServer) return;
+        networkHealth.Value = Mathf.Min(networkHealth.Value + amount, maxHealth);
+        HealFlashClientRpc();
+    }
+
+    [ClientRpc]
+    private void HealFlashClientRpc()
+    {
+        StartCoroutine(HealFlashRoutine());
+    }
+
+    private IEnumerator HealFlashRoutine()
+    {
+        if (spriteRenderer != null) spriteRenderer.color = new Color(0.3f, 1f, 0.4f);
+        yield return new WaitForSeconds(0.25f);
+        //Solo restauramos a blanco si no hay otro buffo activo
+        if (speedBuffCoroutine == null && damageBuffCoroutine == null)
+            if (spriteRenderer != null) spriteRenderer.color = Color.white;
+    }
 
     private void OnDrawGizmosSelected()
     {

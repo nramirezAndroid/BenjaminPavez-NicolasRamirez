@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using Unity.Netcode;
 
 public class EnemyLongSwordKnight : EnemyBase 
 {
@@ -9,7 +10,6 @@ public class EnemyLongSwordKnight : EnemyBase
     public float speed = 1.6f;
 
     [Header("IA: Detección de Borde")]
-
     public bool usarDeteccionDeBordes = false; 
     public float edgeCheckDistance = 0.5f;   
     public float groundCheckDepth = 2.0f; 
@@ -26,59 +26,85 @@ public class EnemyLongSwordKnight : EnemyBase
 
     private Vector2 movementDirection;
     private bool enMovimiento; 
-    private bool isFacingRight = false; 
 
     private float cooldownTimer;
     private bool isAttacking;
 
+    //Sincroniza la dirección en la que mira para todos los clientes
+    public NetworkVariable<bool> networkIsFacingRight = new NetworkVariable<bool>(
+        false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server
+    );
+
+    public override void OnNetworkSpawn()
+    {
+        base.OnNetworkSpawn();
+        networkIsFacingRight.OnValueChanged += OnFacingRightChanged;
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        base.OnNetworkDespawn();
+        networkIsFacingRight.OnValueChanged -= OnFacingRightChanged;
+    }
+
     protected override void Start()
     {
-        health = 200;
+        maxHealth = 200; 
         base.Start(); 
         
-        if (player == null)
+        //Solo el servidor necesita buscar y seguir al jugador
+        if (IsServer && player == null)
         {
             GameObject p = GameObject.FindGameObjectWithTag("Player");
             if (p != null) player = p.transform;
         }
     }
 
-    public override void TakeDamage(int damage, Transform damageSource)
-    {
-        base.TakeDamage(damage, damageSource);
-
-        //Si el enemigo murió, se apaga el trigger "Hurt" antes de que el Animator lo procese
-        if (isDead && anim != null)
-        {
-            anim.ResetTrigger("Hurt"); 
-        }
-
-        //Detiene su movimiento físico
-        if (rb != null && !isDead)
-            rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0f);
-    }
-
     void Update()
     {
-        if (isDead || isStunned || player == null) 
+        //Toda la IA, cooldowns e inputs ocurren en el Servidor
+        if (!IsServer) return;
+
+        if (cooldownTimer > 0) cooldownTimer -= Time.deltaTime;
+
+        if (isDead || isStunned) 
         {
             enMovimiento = false;
             if (anim != null) anim.SetBool("enMovimiento", false);
             return; 
         }
 
-        if (cooldownTimer > 0) cooldownTimer -= Time.deltaTime;
+        if (isAttacking) return;
+
+        if (networkIsPossessed.Value)
+        {
+            //El Host (P2) puede presionar Espacio para atacar manualmente
+            if (Input.GetKeyDown(KeyCode.Space) && cooldownTimer <= 0)
+            {
+                StartCoroutine(SwordAttackRoutine());
+                return;
+            }
+
+            //Sincroniza hacia dónde mira basado en cómo lo mueve el P2
+            if (rb.linearVelocity.x > 0.1f && !networkIsFacingRight.Value) networkIsFacingRight.Value = true;
+            else if (rb.linearVelocity.x < -0.1f && networkIsFacingRight.Value) networkIsFacingRight.Value = false;
+
+            //Animación de caminar manual
+            if (anim != null) anim.SetBool("enMovimiento", Mathf.Abs(rb.linearVelocity.x) > 0.1f);
+            
+            return;
+        }
+
+        if (player == null) return;
 
         float distanceToPlayer = Vector2.Distance(transform.position, player.position);
-
-        if (isAttacking) return;
 
         if (distanceToPlayer < detectionRadius)
         {
             float directionX = player.position.x - transform.position.x;
 
-            if (directionX > 0 && !isFacingRight) Flip();
-            else if (directionX < 0 && isFacingRight) Flip();
+            if (directionX > 0 && !networkIsFacingRight.Value) networkIsFacingRight.Value = true;
+            else if (directionX < 0 && networkIsFacingRight.Value) networkIsFacingRight.Value = false;
 
             bool playerEnRango = attackPoint != null &&
                                  Physics2D.OverlapCircle(attackPoint.position, attackRange, playerLayer) != null;
@@ -116,6 +142,12 @@ public class EnemyLongSwordKnight : EnemyBase
 
     void FixedUpdate()
     {
+        //La física la sigue calculando exclusivamente el servidor
+        if (!IsServer) return;
+
+        //Si está poseído, la física de movimiento horizontal la maneja EnemyBase mediante MoveAsPossessed()
+        if (networkIsPossessed.Value) return;
+
         if (isDead || isStunned || isAttacking)
         {
             rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
@@ -134,7 +166,9 @@ public class EnemyLongSwordKnight : EnemyBase
         enMovimiento = false;
         
         if (anim != null) anim.SetBool("enMovimiento", false);
-        if (anim != null) anim.SetTrigger("Attack"); 
+        
+        //Dispara la animación en todos los clientes al mismo tiempo
+        TriggerAttackAnimClientRpc();
 
         yield return new WaitForSeconds(attackAnticipationTime);
 
@@ -146,11 +180,12 @@ public class EnemyLongSwordKnight : EnemyBase
 
         if (attackPoint == null)
         {
-            Debug.LogError("[EnemyLongSwordKnight] attackPoint no está asignado en el Inspector.");
+            Debug.LogError("[EnemyLongSwordKnight] attackPoint no está asignado.");
             isAttacking = false;
             yield break;
         }
 
+        //El Servidor calcula quién recibe el daño
         Collider2D hitPlayer = Physics2D.OverlapCircle(attackPoint.position, attackRange, playerLayer);
         if (hitPlayer != null)
         {
@@ -165,6 +200,20 @@ public class EnemyLongSwordKnight : EnemyBase
         cooldownTimer = attackCooldown;
     }
 
+    [ClientRpc]
+    private void TriggerAttackAnimClientRpc()
+    {
+        if (anim != null) anim.SetTrigger("Attack"); 
+    }
+
+    //Evento que se ejecuta en las pantallas de todos los jugadores cuando el servidor cambia la dirección
+    private void OnFacingRightChanged(bool previousValue, bool isRight)
+    {
+        Vector3 localScale = transform.localScale;
+        localScale.x = isRight ? -Mathf.Abs(localScale.x) : Mathf.Abs(localScale.x); 
+        transform.localScale = localScale;
+    }
+
     private bool CheckGroundAhead(float dirX)
     {
         Vector2 origin = new Vector2(
@@ -176,12 +225,22 @@ public class EnemyLongSwordKnight : EnemyBase
         return hit.collider != null;
     }
 
-    private void Flip()
+    
+    [ClientRpc]
+    protected override void TakeDamageEffectsClientRpc(Vector3 sourcePosition)
     {
-        isFacingRight = !isFacingRight;
-        Vector3 localScale = transform.localScale;
-        localScale.x *= -1;
-        transform.localScale = localScale;
+        base.TakeDamageEffectsClientRpc(sourcePosition);
+        
+        //Detiene la animación de movimiento al recibir un golpe
+        if (anim != null) anim.SetBool("enMovimiento", false);
+    }
+
+    [ClientRpc]
+    protected override void DieEffectsClientRpc()
+    {
+        base.DieEffectsClientRpc();
+        
+        if (anim != null) anim.ResetTrigger("Hurt"); 
     }
 
     private void OnDrawGizmosSelected()

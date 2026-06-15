@@ -1,6 +1,6 @@
 using System.Collections;
 using UnityEngine;
-
+using Unity.Netcode; 
 
 public class EnemyFlyingShooter : EnemyBase
 {
@@ -10,39 +10,35 @@ public class EnemyFlyingShooter : EnemyBase
     public Transform firePoint;
 
     [Header("Configuración de Vuelo")]
-    public float detectionRange = 12f;   //Radio de visión para perseguir
-    public float speed = 4f;            //Velocidad de traslación
-    public float followDistance = 5f;    //Distancia que mantendrá flotando ante el jugador
+    public float detectionRange = 12f;   
+    public float speed = 4f;            
+    public float followDistance = 5f;    
 
-    [Header("Efecto de Flote Sinusoidal (Estilo Castlevania)")]
-    public float waveSpeed = 3f;        //Qué tan rápido ondula de arriba a abajo
-    public float waveMagnitude = 1f;    //Amplitud de la onda de flote
+    [Header("Efecto de Flote Sinusoidal")]
+    public float waveSpeed = 3f;        
+    public float waveMagnitude = 1f;    
 
     [Header("Configuración de Disparo")]
-    public float fireCooldown = 2f;     //Segundos entre proyectiles
+    public float fireCooldown = 2f;     
     private float fireTimer;
 
     [Header("Efecto Visual de Daño")]
     public Color flashColor = Color.red;
     public float flashDuration = 0.1f;
-    private Color originalColor;
 
     private bool isFacingRight = false;
     private float timeCounter;
 
     protected override void Start()
     {
-        health = 30;           //Vida del enemigo flotante
-        contactDamage = 10;    //Daño si toca al player
+        maxHealth = 30; 
+        contactDamage = 10;    
         base.Start(); 
 
-        if (spriteRenderer != null) originalColor = spriteRenderer.color;
-
-        //Desactiva la gravedad inicial para permitir el vuelo libre
         if (rb != null) rb.gravityScale = 0f;
 
-        //Búsqueda automatizada del Player por Tag
-        if (player == null)
+        //El Servidor se encarga de buscar al jugador
+        if (IsServer && player == null)
         {
             GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
             if (playerObj != null) player = playerObj.transform;
@@ -53,7 +49,11 @@ public class EnemyFlyingShooter : EnemyBase
 
     void Update()
     {
-        //Si el enemigo muere o está aturdido, congela el movimiento
+        //La IA de los enemigos solo existe en el Servidor
+        if (!IsServer) return;
+
+        if (networkIsPossessed.Value) return;
+
         if (isDead || isStunned || player == null)
         {
             if (rb != null && !isDead) rb.linearVelocity = Vector2.zero;
@@ -70,12 +70,10 @@ public class EnemyFlyingShooter : EnemyBase
         }
         else
         {
-            //Estado de reposo (Idle): Flota suavemente arriba y abajo en su lugar usando linearVelocity
             if (rb != null)
             {
                 rb.linearVelocity = new Vector2(0f, Mathf.Sin(Time.time * waveSpeed) * waveMagnitude * 0.5f);
             }
-            
         }
     }
 
@@ -90,10 +88,8 @@ public class EnemyFlyingShooter : EnemyBase
 
         if (rb != null)
         {
-            //Aplica las físicas unificadas con la propiedad linearVelocity
             rb.linearVelocity = new Vector2(movimientoBase.x, movimientoBase.y + floteVertical);
-            
-            
+            if (anim != null) anim.SetBool("enMovimiento", rb.linearVelocity.magnitude > 0.2f);
         }
     }
 
@@ -111,12 +107,21 @@ public class EnemyFlyingShooter : EnemyBase
     {
         if (projectilePrefab == null || firePoint == null) return;
 
-        if (anim != null) anim.SetTrigger("Attack");
+        //Avisa a los clientes que disparen la animación
+        TriggerAttackAnimClientRpc();
 
         Vector2 direccionDisparo = (player.position - firePoint.position).normalized;
         float angulo = Mathf.Atan2(direccionDisparo.y, direccionDisparo.x) * Mathf.Rad2Deg;
 
-        Instantiate(projectilePrefab, firePoint.position, Quaternion.Euler(0, 0, angulo));
+        //El servidor instancia y Spawnea el proyectil en la red
+        GameObject projectile = Instantiate(projectilePrefab, firePoint.position, Quaternion.Euler(0, 0, angulo));
+        projectile.GetComponent<NetworkObject>().Spawn();
+    }
+
+    [ClientRpc]
+    private void TriggerAttackAnimClientRpc()
+    {
+        if (anim != null) anim.SetTrigger("Attack");
     }
 
     void ManejarGiroMirada()
@@ -133,13 +138,12 @@ public class EnemyFlyingShooter : EnemyBase
         transform.localScale = localScale;
     }
 
-    //Polimorfismo para añadir el parpadeo rojo sobre tu sistema base
-    public override void TakeDamage(int damage, Transform damageSource)
-    {
-        if (isDead) return;
 
-        //Ejecuta el daño, el trigger "Hurt", el knockback y el stun
-        base.TakeDamage(damage, damageSource); 
+
+    [ClientRpc]
+    protected override void TakeDamageEffectsClientRpc(Vector3 sourcePosition)
+    {
+        base.TakeDamageEffectsClientRpc(sourcePosition); 
 
         if (spriteRenderer != null)
         {
@@ -148,11 +152,10 @@ public class EnemyFlyingShooter : EnemyBase
         }
     }
 
-    //Forzamos al enemigo a caer físicamente en lugar de flotar al morir
-    protected override void Die()
+    [ClientRpc]
+    protected override void DieEffectsClientRpc()
     {
-        //Ejecuta el trigger "Die"
-        base.Die(); 
+        base.DieEffectsClientRpc(); 
         
         this.enabled = false; 
         if (rb != null)
