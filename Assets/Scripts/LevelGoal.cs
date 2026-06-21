@@ -15,6 +15,11 @@ public class LevelGoal : MonoBehaviour
     public string nombreSiguienteNivel = "Masmorra_Nivel2"; 
     public bool cargarAlInstante = false;
 
+    [Header("Victoria Final (Cooperativo)")]
+    [Tooltip("Marca esto SOLO en el LevelGoal del último nivel. " +
+             "Los niveles intermedios cargan el siguiente nivel sin mostrar el panel de victoria.")]
+    public bool esVictoriaFinal = false;
+
     private SpriteRenderer spriteRenderer;
     private bool estaDesbloqueada = false;
 
@@ -54,9 +59,31 @@ public class LevelGoal : MonoBehaviour
             if (hasTriggered) return;
             hasTriggered = true;
 
-            //Notifica al GameManager (congela tiempo, muestra pantalla de victoria)
-            if (GameManager.instance != null)
-                GameManager.instance.WinLevel();
+            bool esCooperativo = NetworkModeData.modoSeleccionado == NetworkModeData.Mode.Host
+                              || NetworkModeData.modoSeleccionado == NetworkModeData.Mode.Cliente;
+
+            if (esCooperativo)
+            {
+                // Modo Cooperativo: SOLO CoopManager gestiona la victoria.
+                // No llamamos a GameManager.WinLevel() para evitar doble lógica en red.
+                // esVictoriaFinal decide si se muestra el panel de resultados
+                // o si simplemente se avanza a nombreSiguienteNivel sin interrumpir.
+                if (CoopManager.instance != null && GameManager.instance != null)
+                {
+                    CoopManager.instance.OnGoalReached(
+                        GameManager.instance.ElapsedTime,
+                        esVictoriaFinal,
+                        nombreSiguienteNivel);
+                }
+            }
+
+            //Notifica al CoopManager la victoria compartida de ambos jugadores
+            if (CoopManager.instance != null && GameManager.instance != null)
+            {
+                // Modo Solitario: comportamiento original, sin red.
+                if (GameManager.instance != null)
+                    GameManager.instance.WinLevel();
+            }
 
             //RecordSystem persiste entre sesiones y solo sobreescribe si es mejor tiempo.
             if (RecordSystem.instance != null && GameManager.instance != null)
@@ -70,12 +97,6 @@ public class LevelGoal : MonoBehaviour
                     Debug.Log($"🏆 ¡Nuevo récord en {sceneName}: {GameManager.instance.GetTimeString()}!");
             }
 
-            //Notifica al CoopManager la victoria compartida de ambos jugadores
-            if (CoopManager.instance != null && GameManager.instance != null)
-            {
-                CoopManager.instance.OnGoalReached(GameManager.instance.ElapsedTime);
-            }
-
             //Detiene físicamente al jugador
             Rigidbody2D playerRb = collision.GetComponent<Rigidbody2D>();
             if (playerRb != null)
@@ -84,7 +105,10 @@ public class LevelGoal : MonoBehaviour
                 playerRb.bodyType       = RigidbodyType2D.Static; 
             }
 
-            if (cargarAlInstante)
+            // cargarAlInstante solo aplica al modo Solitario.
+            // En Cooperativo, CoopManager ya decide cuándo cargar el siguiente nivel
+            // (vía ClientRpc, para que ambos jugadores carguen sincronizados).
+            if (!esCooperativo && cargarAlInstante)
             {
                 Time.timeScale = 1f; 
                 if (LoadingScreenManager.Instance != null)

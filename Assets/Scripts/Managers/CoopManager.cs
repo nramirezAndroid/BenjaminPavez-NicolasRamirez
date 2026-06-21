@@ -71,10 +71,37 @@ public class CoopManager : NetworkBehaviour
     }
 
 
-    public void OnGoalReached(float completionTime)
+
+    public void OnGoalReached(float completionTime, bool esVictoriaFinal, string nombreSiguienteNivel = null)
     {
         if (!IsServer) return;
-        ShowVictoryClientRpc(completionTime);
+
+        if (esVictoriaFinal)
+        {
+            ShowVictoryClientRpc(completionTime);
+        }
+        else
+        {
+            AvanzarSiguienteNivelClientRpc(nombreSiguienteNivel);
+        }
+    }
+
+    [ClientRpc]
+    private void AvanzarSiguienteNivelClientRpc(string nombreSiguienteNivel)
+    {
+        //Nivel intermedio: no se muestra ningún panel, se sigue jugando sin pausa.
+        Time.timeScale = 1f;
+
+        if (string.IsNullOrEmpty(nombreSiguienteNivel))
+        {
+            Debug.LogWarning("[CoopManager] nombreSiguienteNivel vacío; no se puede avanzar de nivel.");
+            return;
+        }
+
+        if (LoadingScreenManager.Instance != null)
+            LoadingScreenManager.Instance.LoadScene(nombreSiguienteNivel);
+        else
+            SceneManager.LoadScene(nombreSiguienteNivel);
     }
 
     [ClientRpc]

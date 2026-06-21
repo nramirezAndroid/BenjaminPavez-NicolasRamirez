@@ -4,9 +4,14 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using TMPro;
+using Unity.Netcode;
 
 public class MainMenuManager : MonoBehaviour
 {
+    // ─────────────────────────────────────────────────────────────────────────
+    // PANELES PRINCIPALES
+    // ─────────────────────────────────────────────────────────────────────────
+
     [Header("Paneles del Menú")]
     public GameObject panelMenuPrincipal;
     public GameObject panelConfirmacion;
@@ -25,27 +30,66 @@ public class MainMenuManager : MonoBehaviour
     public GameObject panelClientJoin;    //Pantalla para que el Cliente escriba
     public TMP_InputField inputIPCliente; //Campo donde el cliente escribe la IP
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // PANEL DE RED (Cooperativo Online)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    [Header("Panel de Red (Cooperativo)")]
+    public GameObject panelNetwork;
+
+    [Header("Sub-paneles de Red")]
+    public GameObject panelBotonesMultiplayer;
+
+    public GameObject panelHostWait;           //Muestra el CÓDIGO de sala al Host
+    public TextMeshProUGUI textoIPHost;        
+    public Button botonContinuarHost;          //Aparece tras crear la sala; carga el nivel
+
+    public GameObject panelClientJoin;         //El cliente escribe el código
+    public TMP_InputField inputIPCliente;      
+
+    [Header("Estado de Conexión")]
+    [Tooltip("Texto opcional para mostrar 'Conectando...' / errores")]
+    public TextMeshProUGUI textoEstadoConexion;
+    public GameObject loadingSpinner; 
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // SCOREBOARD
+    // ─────────────────────────────────────────────────────────────────────────
+
     [Header("Scoreboard")]
-    public GameObject filaPrefab; 
+    public GameObject filaPrefab;
     public Transform contentContenedor;
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // BOTONES
+    // ─────────────────────────────────────────────────────────────────────────
 
     [Header("Botones del Menú")]
     public Button nuevaPartidaButton;
     public Button continuarButton;
-    public Button opcionesButton;   
+    public Button cooperativoButton;
+    public Button opcionesButton;
     public Button salirButton;
 
     [Header("Botones de Confirmación")]
     public Button confirmSiButton;
     public Button confirmNoButton;
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // ESCENAS
+    // ─────────────────────────────────────────────────────────────────────────
+
     [Header("Escenas")]
     public int primerNivelIndex = 1;
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // INICIO
+    // ─────────────────────────────────────────────────────────────────────────
+
     void Start()
     {
-        Time.timeScale = 1f;
-        Cursor.visible = true;
+        Time.timeScale   = 1f;
+        Cursor.visible   = true;
         Cursor.lockState = CursorLockMode.None;
 
         if (SaveSystem.instance == null)
@@ -53,17 +97,22 @@ public class MainMenuManager : MonoBehaviour
 
         ActualizarBotones();
 
-        if (panelMenuPrincipal != null) panelMenuPrincipal.SetActive(true);
-        if (panelConfirmacion  != null) panelConfirmacion.SetActive(false);
-        if (panelOpciones      != null) panelOpciones.gameObject.SetActive(false);
-        if (panelScoreboard    != null) panelScoreboard.SetActive(false);
-        if (panelNetwork       != null) panelNetwork.SetActive(false); 
-        
-        //Asegurarnos de que los sub-paneles estén apagados al inicio
+        if (panelMenuPrincipal      != null) panelMenuPrincipal.SetActive(true);
+        if (panelConfirmacion       != null) panelConfirmacion.SetActive(false);
+        if (panelOpciones           != null) panelOpciones.gameObject.SetActive(false);
+        if (panelScoreboard         != null) panelScoreboard.SetActive(false);
+        if (panelNetwork            != null) panelNetwork.SetActive(false);
         if (panelBotonesMultiplayer != null) panelBotonesMultiplayer.SetActive(false);
-        if (panelHostWait      != null) panelHostWait.SetActive(false);
-        if (panelClientJoin    != null) panelClientJoin.SetActive(false);
+        if (panelHostWait           != null) panelHostWait.SetActive(false);
+        if (panelClientJoin         != null) panelClientJoin.SetActive(false);
+        if (loadingSpinner          != null) loadingSpinner.SetActive(false);
+
+        LimpiarEstadoConexion();
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // NUEVA PARTIDA (Solitario)
+    // ─────────────────────────────────────────────────────────────────────────
 
     public void NuevaPartida()
     {
@@ -103,6 +152,10 @@ public class MainMenuManager : MonoBehaviour
         EjecutarCargaDeNivel(primerNivelIndex);
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // CONTINUAR
+    // ─────────────────────────────────────────────────────────────────────────
+
     public void Continuar()
     {
         if (SaveSystem.instance == null) return;
@@ -117,93 +170,159 @@ public class MainMenuManager : MonoBehaviour
         EjecutarCargaDeNivel(data.sceneIndex);
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // COOPERATIVO ONLINE 
+    // ─────────────────────────────────────────────────────────────────────────
 
-
-    public void AbrirPanelMultijugador()
+    public void AbrirPanelCooperativo()
     {
-        if (panelMenuPrincipal != null) panelMenuPrincipal.SetActive(false);
-        if (panelNetwork != null) panelNetwork.SetActive(true);
-        
+        if (panelMenuPrincipal      != null) panelMenuPrincipal.SetActive(false);
+        if (panelNetwork            != null) panelNetwork.SetActive(true);
         if (panelBotonesMultiplayer != null) panelBotonesMultiplayer.SetActive(true);
-        if (panelHostWait != null) panelHostWait.SetActive(false);
-        if (panelClientJoin != null) panelClientJoin.SetActive(false);
+        if (panelHostWait           != null) panelHostWait.SetActive(false);
+        if (panelClientJoin         != null) panelClientJoin.SetActive(false);
+        LimpiarEstadoConexion();
     }
 
-    public void CerrarPanelMultijugador() 
+    public void CerrarPanelCooperativo()
     {
-        if (panelNetwork != null) panelNetwork.SetActive(false);
+        if (panelNetwork            != null) panelNetwork.SetActive(false);
         if (panelBotonesMultiplayer != null) panelBotonesMultiplayer.SetActive(false);
-        if (panelHostWait != null) panelHostWait.SetActive(false);
-        if (panelClientJoin != null) panelClientJoin.SetActive(false);
-        
-        if (panelMenuPrincipal != null) panelMenuPrincipal.SetActive(true);
+        if (panelHostWait           != null) panelHostWait.SetActive(false);
+        if (panelClientJoin         != null) panelClientJoin.SetActive(false);
+        if (panelMenuPrincipal      != null) panelMenuPrincipal.SetActive(true);
     }
 
-    public void VolverSeleccionMultiplayer()
+    public void VolverSeleccionCooperativo()
     {
-        if (panelHostWait != null) panelHostWait.SetActive(false);
-        if (panelClientJoin != null) panelClientJoin.SetActive(false);
-        
+        if (panelHostWait           != null) panelHostWait.SetActive(false);
+        if (panelClientJoin         != null) panelClientJoin.SetActive(false);
         if (panelBotonesMultiplayer != null) panelBotonesMultiplayer.SetActive(true);
+        LimpiarEstadoConexion();
     }
+
 
     public void AbrirPantallaHost()
     {
-        //Apagamos los botones iniciales ("Create Lobby", "Join Lobby", etc.)
         if (panelBotonesMultiplayer != null) panelBotonesMultiplayer.SetActive(false);
-        
-        if (panelHostWait != null) panelHostWait.SetActive(true);
-        if (textoIPHost != null) textoIPHost.text = "Tu IP es: " + ObtenerIPLocal();
+        if (panelHostWait           != null) panelHostWait.SetActive(true);
+
+        if (textoIPHost != null) textoIPHost.text = "";
+        if (botonContinuarHost != null) botonContinuarHost.gameObject.SetActive(false);
+        LimpiarEstadoConexion();
     }
 
-    public void ConfirmarHost()
+
+    public async void ConfirmarHost()
+    {
+        MostrarEstadoConexion("Creando sala...");
+
+        string joinCode = await RelayManager.instance.CreateRelayHost();
+
+        if (string.IsNullOrEmpty(joinCode))
+        {
+            MostrarEstadoConexion("❌ No se pudo crear la sala. Revisa tu conexión a internet.");
+            if (textoIPHost != null) textoIPHost.text = "";
+            return;
+        }
+
+        if (textoIPHost != null)
+            textoIPHost.text = $"Código de sala: {joinCode}";
+
+        MostrarEstadoConexion("Comparte el código con tu compañero y presiona Continuar.");
+
+        if (botonContinuarHost != null) botonContinuarHost.gameObject.SetActive(true);
+    }
+
+ 
+    public void CopiarCodigoAlPortapapeles()
+    {
+        if (RelayManager.instance == null || string.IsNullOrEmpty(RelayManager.instance.JoinCode))
+            return;
+
+        GUIUtility.systemCopyBuffer = RelayManager.instance.JoinCode;
+        MostrarEstadoConexion("✓ Código copiado al portapapeles.");
+    }
+
+  
+    public void ContinuarComoHost()
     {
         NetworkModeData.modoSeleccionado = NetworkModeData.Mode.Host;
-        EjecutarCargaDeNivel(primerNivelIndex);
-    }
-
-    public void AbrirPantallaCliente()
-    {
-        //Apagamos los botones iniciales
-        if (panelBotonesMultiplayer != null) panelBotonesMultiplayer.SetActive(false);
         
-        if (panelClientJoin != null) panelClientJoin.SetActive(true);
-    }
-
-    public void ConfirmarCliente()
-    {
-        NetworkModeData.modoSeleccionado = NetworkModeData.Mode.Cliente;
-        
-        string ipIngresada = inputIPCliente.text.Trim();
-        NetworkModeData.ipDelHost = string.IsNullOrEmpty(ipIngresada) ? "127.0.0.1" : ipIngresada;
-        
-        EjecutarCargaDeNivel(primerNivelIndex); 
-    }
-
-    private string ObtenerIPLocal()
-    {
-        var host = Dns.GetHostEntry(Dns.GetHostName());
-        foreach (var ip in host.AddressList)
+        //El Host es quien controla la carga de escena con Netcode
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsHost)
         {
-            if (ip.AddressFamily == AddressFamily.InterNetwork)
-            {
-                return ip.ToString();
-            }
-        }
-        return "127.0.0.1";
-    }
-
-    private void EjecutarCargaDeNivel(int indexEscena)
-    {
-        if (LoadingScreenManager.Instance != null)
-        {
-            LoadingScreenManager.Instance.LoadScene(indexEscena);
+            EjecutarCargaDeNivelComoHost(primerNivelIndex);
         }
         else
         {
-            SceneManager.LoadScene(indexEscena);
+            Debug.LogError("[MainMenuManager] ContinuarComoHost() llamado pero NetworkManager no está listo o no somos Host.");
         }
     }
+
+    // ─── Cliente (P2) — se une con el código ────────────────────────────────
+
+    public void AbrirPantallaCliente()
+    {
+        if (panelBotonesMultiplayer != null) panelBotonesMultiplayer.SetActive(false);
+        if (panelClientJoin         != null) panelClientJoin.SetActive(true);
+        LimpiarEstadoConexion();
+    }
+
+    public async void ConfirmarCliente()
+    {
+        string codigo = inputIPCliente != null ? inputIPCliente.text.Trim() : "";
+
+        if (string.IsNullOrEmpty(codigo))
+        {
+            MostrarEstadoConexion("⚠️ Escribe el código de sala.");
+            return;
+        }
+
+        MostrarEstadoConexion("Conectando...");
+        if (loadingSpinner != null) loadingSpinner.SetActive(true);
+
+        bool conectado = await RelayManager.instance.JoinRelayAsClient(codigo);
+
+        if (loadingSpinner != null) loadingSpinner.SetActive(false);
+
+        if (!conectado)
+        {
+            MostrarEstadoConexion("❌ Código inválido o la sala ya no existe.");
+            return;
+        }
+
+        NetworkModeData.modoSeleccionado = NetworkModeData.Mode.Cliente;
+        
+        //El Cliente NUNCA carga la escena manualmente.
+        //Solo espera a que Netcode sincronice cuando el Host cargue.
+        MostrarEstadoConexion("✓ Conectado. Esperando que el Host cargue el nivel...");
+        
+        // Cerrar paneles del menú y esperar la sincronización automática
+        if (panelNetwork != null) panelNetwork.SetActive(false);
+        if (panelClientJoin != null) panelClientJoin.SetActive(false);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // ESTADO DE CONEXIÓN (feedback al usuario)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private void MostrarEstadoConexion(string mensaje)
+    {
+        if (textoEstadoConexion != null)
+            textoEstadoConexion.text = mensaje;
+
+        Debug.Log($"[MainMenuManager] {mensaje}");
+    }
+
+    private void LimpiarEstadoConexion()
+    {
+        if (textoEstadoConexion != null) textoEstadoConexion.text = "";
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // OPCIONES
+    // ─────────────────────────────────────────────────────────────────────────
 
     public void AbrirOpciones()
     {
@@ -217,6 +336,45 @@ public class MainMenuManager : MonoBehaviour
         if (panelMenuPrincipal != null) panelMenuPrincipal.SetActive(true);
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // SCOREBOARD
+    // ─────────────────────────────────────────────────────────────────────────
+
+    public void MostrarScoreboard()
+    {
+        if (panelMenuPrincipal != null) panelMenuPrincipal.SetActive(false);
+        if (panelScoreboard    != null) panelScoreboard.SetActive(true);
+
+        foreach (Transform child in contentContenedor)
+            Destroy(child.gameObject);
+
+        if (RecordSystem.instance == null) return;
+
+        foreach (var record in RecordSystem.instance.GetAll())
+        {
+            GameObject nuevaFila = Instantiate(filaPrefab, contentContenedor);
+            TextMeshProUGUI[] textos = nuevaFila.GetComponentsInChildren<TextMeshProUGUI>();
+
+            if (textos.Length >= 2)
+            {
+                textos[0].text = record.levelName;
+                int m = Mathf.FloorToInt(record.bestTime / 60f);
+                int s = Mathf.FloorToInt(record.bestTime % 60f);
+                textos[1].text = $"{m:00}:{s:00}";
+            }
+        }
+    }
+
+    public void CerrarScoreboard()
+    {
+        if (panelScoreboard    != null) panelScoreboard.SetActive(false);
+        if (panelMenuPrincipal != null) panelMenuPrincipal.SetActive(true);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // SALIR
+    // ─────────────────────────────────────────────────────────────────────────
+
     public void Salir()
     {
         Debug.Log("Saliendo del juego...");
@@ -227,44 +385,48 @@ public class MainMenuManager : MonoBehaviour
         #endif
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // HELPERS PRIVADOS
+    // ─────────────────────────────────────────────────────────────────────────
+
     private void ActualizarBotones()
     {
         bool haySave = SaveSystem.instance != null && SaveSystem.instance.HasSaveFile();
-
-        if (continuarButton != null)
-            continuarButton.gameObject.SetActive(haySave);
+        if (continuarButton != null) continuarButton.gameObject.SetActive(haySave);
     }
 
-    public void MostrarScoreboard()
+
+    private void EjecutarCargaDeNivel(int indexEscena)
     {
-        if (panelMenuPrincipal != null) panelMenuPrincipal.SetActive(false);
-        if (panelScoreboard != null) panelScoreboard.SetActive(true);
-
-        foreach (Transform child in contentContenedor)
+        if (LoadingScreenManager.Instance != null)
         {
-            Destroy(child.gameObject);
+            // LoadingScreenManager usa SceneManager.LoadSceneAsync internamente
+            // Esto es correcto para solitario, ya que no hay Netcode
+            LoadingScreenManager.Instance.LoadScene(indexEscena);
         }
-
-        if (RecordSystem.instance == null) return;
-
-        foreach (var record in RecordSystem.instance.GetAll())
+        else
         {
-            GameObject nuevaFila = Instantiate(filaPrefab, contentContenedor);
-            TextMeshProUGUI[] textos = nuevaFila.GetComponentsInChildren<TextMeshProUGUI>();
-        
-            if (textos.Length >= 2)
-            {
-                textos[0].text = record.levelName;
-                int minutes = Mathf.FloorToInt(record.bestTime / 60f);
-                int seconds = Mathf.FloorToInt(record.bestTime % 60f);
-                textos[1].text = string.Format("{0:00}:{1:00}", minutes, seconds); 
-            }
+            SceneManager.LoadScene(indexEscena);
         }
     }
 
-    public void CerrarScoreboard()
+
+    private void EjecutarCargaDeNivelComoHost(int sceneIndex)
     {
-        if (panelScoreboard != null) panelScoreboard.SetActive(false);
-        if (panelMenuPrincipal != null) panelMenuPrincipal.SetActive(true);
+        if (NetworkManager.Singleton == null)
+        {
+            Debug.LogError("[MainMenuManager] NetworkManager.Singleton es null. No se puede cargar la escena con Netcode.");
+            return;
+        }
+
+        if (!NetworkManager.Singleton.IsHost)
+        {
+            Debug.LogError("[MainMenuManager] EjecutarCargaDeNivelComoHost() solo debe ser llamado por el Host.");
+            return;
+        }
+
+        Debug.Log($"[MainMenuManager] Host cargando escena {sceneIndex} con NetworkManager.SceneManager...");
+
+        NetworkManager.Singleton.SceneManager.LoadScene("Nivel1", LoadSceneMode.Single);
     }
 }

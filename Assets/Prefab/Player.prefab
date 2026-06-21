@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3925882819206019284}
   - component: {fileID: 8546404392373847250}
+  - component: {fileID: 2577877929926487825}
   - component: {fileID: 8112479868607386731}
   - component: {fileID: 7517183481985189476}
   - component: {fileID: 4174161706168197561}
@@ -102,6 +103,31 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!114 &2577877929926487825
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 754659200096010587}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 1386106071
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!114 &8112479868607386731
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -114,6 +140,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7f6e06083a9d88048aa442c9941653f6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Player
+  ShowTopMostFoldoutHeaderGroup: 1
   healthImage: {fileID: 0}
   dashCooldownImage: {fileID: 0}
   dashChargesText: {fileID: 0}
@@ -132,6 +159,7 @@ MonoBehaviour:
   crouchSpeedMultiplier: 0.5
   crouchHeightMultiplier: 0.55
   wallSlideSpeed: 2
+  wallSlideDuration: 1.2
   wallJumpForce: {x: 6, y: 5}
   wallJumpDuration: 0.35
   groundCheck: {fileID: 3086589424590151041}
@@ -149,8 +177,14 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 256
   attackDamage: 25
+  attackCooldown: 0.5
   maxHealth: 100
   voidYThreshold: -20
+  networkHealth:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 100
   knockbackForceX: 8
   knockbackForceY: 5
   knockbackDuration: 0.2

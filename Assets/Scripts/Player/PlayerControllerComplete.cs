@@ -112,9 +112,11 @@ public class PlayerControllerComplete : NetworkBehaviour
     public bool isTalking = false;
     private PlayerEffectsController fxController;
 
-
-    private float baseWalkSpeed;      //Velocidad original sin buffo
-    private int   baseAttackDamage;   //Daño original sin buffo
+    // ─────────────────────────────────────────────────────────────────────────
+    // BUFFOS COOPERATIVOS (aplicados por Player2Controller)
+    // ─────────────────────────────────────────────────────────────────────────
+    private float baseWalkSpeed;      // Velocidad original sin buffo
+    private int   baseAttackDamage;   // Daño original sin buffo
     private Coroutine speedBuffCoroutine;
     private Coroutine damageBuffCoroutine;
     private SpriteRenderer spriteRenderer;
@@ -123,7 +125,7 @@ public class PlayerControllerComplete : NetworkBehaviour
     {
         if (IsServer)
         {
-            
+            //
             if (SaveSystem.instance != null && SaveSystem.instance.pendingLoad != null)
             {
                 SaveData data = SaveSystem.instance.pendingLoad;
@@ -136,6 +138,20 @@ public class PlayerControllerComplete : NetworkBehaviour
             {
                 networkHealth.Value = maxHealth;
             }
+        }
+
+        // La cámara antes apuntaba a un Player colocado a mano en la escena.
+        // Ahora que P1 se instancia dinámicamente por red, cada cliente debe
+        // configurar su PROPIA cámara local para seguir a P1 — incluyendo P2,
+        // que no es dueño de este objeto pero también necesita ver a P1.
+        //
+        // IMPORTANTE: NO condicionamos esto a IsOwner. En este juego cooperativo
+        // solo existe UN P1 por partida, así que cualquier cliente que vea este
+        // objeto debe apuntar su cámara local hacia él, sea o no su dueño.
+        CameraFollow cam = FindAnyObjectByType<CameraFollow>();
+        if (cam != null)
+        {
+            cam.target = transform;
         }
     }
 
@@ -163,7 +179,7 @@ public class PlayerControllerComplete : NetworkBehaviour
 
         spawnPosition = transform.position;
 
-        //Guardamos los valores base para poder restaurarlos tras un buffo
+        // Guardamos los valores base para poder restaurarlos tras un buffo
         baseWalkSpeed    = walkSpeed;
         baseAttackDamage = attackDamage;
         spriteRenderer   = GetComponent<SpriteRenderer>();
@@ -672,7 +688,6 @@ public class PlayerControllerComplete : NetworkBehaviour
     public bool IsDead        => isDead;
     public int  CurrentSprintCharges => currentSprintCharges; 
 
-
     public void ApplySpeedBuff(float multiplier, float duration)
     {
         if (speedBuffCoroutine != null) StopCoroutine(speedBuffCoroutine);
@@ -690,6 +705,8 @@ public class PlayerControllerComplete : NetworkBehaviour
         if (spriteRenderer != null) spriteRenderer.color = Color.white;
         speedBuffCoroutine = null;
     }
+
+
     public void ApplyDamageBuff(float multiplier, float duration)
     {
         if (damageBuffCoroutine != null) StopCoroutine(damageBuffCoroutine);
@@ -707,6 +724,8 @@ public class PlayerControllerComplete : NetworkBehaviour
         if (spriteRenderer != null) spriteRenderer.color = Color.white;
         damageBuffCoroutine = null;
     }
+
+
     public void Heal(int amount)
     {
         if (!IsServer) return;

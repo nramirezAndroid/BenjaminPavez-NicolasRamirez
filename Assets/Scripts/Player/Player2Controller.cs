@@ -1,25 +1,26 @@
 using UnityEngine;
 using TMPro;
 using Unity.Netcode;
-using System.Collections;
 
-
+/// <summary>
+/// Controlador del Jugador 2 en modo cooperativo.
+/// P2 NO se mueve por sí mismo. Solo puede:
+/// - Poseer enemigos (clic derecho) para moverlos y atacar con ellos.
+/// - Lanzar buffos sobre P1: velocidad (Q), daño (E), curación (R).
+/// </summary>
 public class Player2Controller : NetworkBehaviour
 {
-
-
-    [Header("Trampas disponibles")]
-    public GameObject[] trapPrefabs;
-    public LayerMask placementLayer;
-    public int trapBudget = 5;
-
-
+    // ─────────────────────────────────────────────────────────────────────────
+    // POSESIÓN DE ENEMIGOS
+    // ─────────────────────────────────────────────────────────────────────────
 
     [Header("Posesión de enemigos")]
     public float possessionRange = 3f;
     public LayerMask enemyLayer;
 
-
+    // ─────────────────────────────────────────────────────────────────────────
+    // BUFFOS COOPERATIVOS
+    // ─────────────────────────────────────────────────────────────────────────
 
     [Header("Buffos cooperativos")]
     [Tooltip("Multiplicador de velocidad de P1 durante el buffo")]
@@ -33,121 +34,94 @@ public class Player2Controller : NetworkBehaviour
     [Tooltip("Tiempo de recarga entre buffos del mismo tipo (segundos)")]
     public float buffCooldown = 20f;
 
-    //Tiempos de recarga individuales por tipo de buffo
+    // Tiempos de recarga individuales por tipo de buffo
     private float cooldownSpeed  = 0f;
     private float cooldownDamage = 0f;
     private float cooldownHeal   = 0f;
 
-
-
-    [Header("UI")]
-    public TextMeshProUGUI budgetText;
-    public GameObject placementGhost;
+    // ─────────────────────────────────────────────────────────────────────────
+    // UI
+    // ─────────────────────────────────────────────────────────────────────────
 
     [Header("UI de Buffos (iconos/cooldowns)")]
     public TextMeshProUGUI cdSpeedText;
     public TextMeshProUGUI cdDamageText;
     public TextMeshProUGUI cdHealText;
 
-
+    // ─────────────────────────────────────────────────────────────────────────
+    // ESTADO INTERNO
+    // ─────────────────────────────────────────────────────────────────────────
 
     public bool isP2Active = false;
 
-    public NetworkVariable<int> networkTrapsPlaced = new NetworkVariable<int>(
-        0,
-        NetworkVariableReadPermission.Everyone,
-        NetworkVariableWritePermission.Server
-    );
-
-    private int selectedTrap = 0;
     private EnemyBase possessedEnemy = null;
     private Camera cam;
 
-
-
-
+    // Cacheamos al P1 para enviarle buffos. Se busca al inicio.
     private PlayerControllerComplete player1 = null;
 
-
+    // ─────────────────────────────────────────────────────────────────────────
+    // UNITY / NGO
+    // ─────────────────────────────────────────────────────────────────────────
 
     void Start()
     {
-        cam = Camera.main;
+        // cam se reasigna también en OnNetworkSpawn (más confiable para objetos
+        // instanciados dinámicamente por red), pero lo dejamos aquí como
+        // fallback por si este componente se usa fuera de un contexto de red.
+        if (cam == null) cam = Camera.main;
     }
 
     public override void OnNetworkSpawn()
     {
-        networkTrapsPlaced.OnValueChanged += (oldVal, newVal) => UpdateUI();
-        UpdateUI();
-    }
+        // [DIAGNÓSTICO TEMPORAL] — quitar una vez resuelto el problema de input.
+        Debug.Log($"[Player2Controller] OnNetworkSpawn — IsOwner={IsOwner}, IsServer={IsServer}, IsClient={IsClient}, NetworkObjectId={NetworkObjectId}");
 
-    public override void OnNetworkDespawn()
-    {
-        networkTrapsPlaced.OnValueChanged -= (oldVal, newVal) => UpdateUI();
+        // Cada cliente activa sus propios controles solo en su instancia local.
+        // No se replica desde el servidor porque isP2Active es un campo simple,
+        // no una NetworkVariable — cada cliente decide por sí mismo si es su
+        // turno de jugar, basado en si es el dueño (IsOwner) de este objeto.
+        if (IsOwner)
+        {
+            isP2Active = true;
+            // Reconfirmamos la cámara aquí: en el momento de OnNetworkSpawn
+            // el estado de escena/red es más estable que en Start().
+            cam = Camera.main;
+
+            // [DIAGNÓSTICO TEMPORAL]
+            Debug.Log($"[Player2Controller] Soy el Owner. isP2Active={isP2Active}, cam={(cam != null ? cam.name : "NULL")}");
+        }
     }
 
     void Update()
     {
+        // [DIAGNÓSTICO TEMPORAL] — log solo una vez por segundo para no saturar consola.
+        if (Time.frameCount % 60 == 0)
+        {
+            Debug.Log($"[Player2Controller] Update check — isP2Active={isP2Active}, IsOwner={IsOwner}, timeScale={Time.timeScale}");
+        }
+
         if (!isP2Active || !IsOwner) return;
         if (Time.timeScale == 0f) return;
 
         TickCooldowns();
         UpdateCooldownUI();
 
-        HandleTrapPlacement();
         HandleEnemyPossession();
-        HandleTrapSelection();
         HandleBuffInputs();
     }
 
-
-
-    void HandleTrapPlacement()
-    {
-        Vector3 mouseWorld = cam.ScreenToWorldPoint(Input.mousePosition);
-        mouseWorld.z = 0f;
-
-        if (placementGhost != null)
-            placementGhost.transform.position = mouseWorld;
-
-        if (Input.GetMouseButtonDown(0) && networkTrapsPlaced.Value < trapBudget && trapPrefabs.Length > 0)
-        {
-            RaycastHit2D hit = Physics2D.Raycast(mouseWorld, Vector2.down, 1f, placementLayer);
-            if (hit.collider != null)
-                PlaceTrapServerRpc(selectedTrap, mouseWorld);
-        }
-    }
-
-    [ServerRpc]
-    public void PlaceTrapServerRpc(int trapIndex, Vector3 spawnPosition)
-    {
-        if (networkTrapsPlaced.Value >= trapBudget) return;
-
-        GameObject trapInstance = Instantiate(trapPrefabs[trapIndex], spawnPosition, Quaternion.identity);
-        trapInstance.GetComponent<NetworkObject>().Spawn();
-        networkTrapsPlaced.Value++;
-    }
-
-    void HandleTrapSelection()
-    {
-        if (trapPrefabs.Length <= 1) return;
-        float scroll = Input.GetAxis("Mouse ScrollWheel");
-        if (scroll > 0) selectedTrap = (selectedTrap + 1) % trapPrefabs.Length;
-        if (scroll < 0) selectedTrap = (selectedTrap - 1 + trapPrefabs.Length) % trapPrefabs.Length;
-    }
-
-
+    // ─────────────────────────────────────────────────────────────────────────
+    // POSESIÓN DE ENEMIGOS (clic derecho: poseer/liberar)
+    // ─────────────────────────────────────────────────────────────────────────
 
     void HandleEnemyPossession()
     {
-        //Movimiento del enemigo poseído
+        // Movimiento del enemigo poseído (WASD/flechas horizontales)
         if (possessedEnemy != null)
         {
             float h = Input.GetAxisRaw("Horizontal");
             possessedEnemy.MoveAsPossessed(h);
-
-            //Ataque del enemigo: clic izquierdo (si no estamos colocando trampa)
-            //Para no interferir con el placement, el clic derecho libera la posesión
         }
 
         if (!Input.GetMouseButtonDown(1)) return;
@@ -159,6 +133,9 @@ public class Player2Controller : NetworkBehaviour
             possessedEnemy = null;
             return;
         }
+
+        if (cam == null) cam = Camera.main;
+        if (cam == null) return;
 
         Vector3 mouseWorld = cam.ScreenToWorldPoint(Input.mousePosition);
         mouseWorld.z = 0f;
@@ -174,10 +151,10 @@ public class Player2Controller : NetworkBehaviour
         }
     }
 
-  
-    //Buffo cooperativo
-    //Teclas: Q = Velocidad | E = Daño | R = Curación
-
+    // ─────────────────────────────────────────────────────────────────────────
+    // BUFFOS COOPERATIVOS
+    // Teclas: Q = Velocidad | E = Daño | R = Curación
+    // ─────────────────────────────────────────────────────────────────────────
 
     void HandleBuffInputs()
     {
@@ -196,14 +173,14 @@ public class Player2Controller : NetworkBehaviour
     [ServerRpc]
     private void RequestBuffServerRpc(BuffType type)
     {
-        //El servidor aplica el buffo y confirma a todos los clientes
+        // El servidor aplica el buffo y confirma a todos los clientes
         ApplyBuffClientRpc(type);
     }
 
     [ClientRpc]
     private void ApplyBuffClientRpc(BuffType type)
     {
-        //Buscamos al P1 si aún no lo tenemos
+        // Buscamos al P1 si aún no lo tenemos
         if (player1 == null)
             player1 = FindAnyObjectByType<PlayerControllerComplete>();
 
@@ -217,7 +194,7 @@ public class Player2Controller : NetworkBehaviour
         {
             case BuffType.Speed:
                 player1.ApplySpeedBuff(speedBuffMultiplier, buffDuration);
-                //Iniciamos cooldown local en el cliente P2
+                // Iniciamos cooldown local en el cliente P2
                 if (IsOwner) cooldownSpeed = buffCooldown;
                 break;
 
@@ -233,6 +210,9 @@ public class Player2Controller : NetworkBehaviour
         }
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // COOLDOWNS Y UI
+    // ─────────────────────────────────────────────────────────────────────────
 
     void TickCooldowns()
     {
@@ -251,23 +231,16 @@ public class Player2Controller : NetworkBehaviour
             cdHealText.text   = cooldownHeal   > 0f ? $"R ({cooldownHeal:F0}s)"   : "R listo";
     }
 
-    void UpdateUI()
-    {
-        if (!IsOwner) return;
-        if (budgetText != null)
-            budgetText.text = $"Trampas: {trapBudget - networkTrapsPlaced.Value} restantes";
-    }
-
+    // ─────────────────────────────────────────────────────────────────────────
+    // RESET ENTRE PARTIDAS
+    // ─────────────────────────────────────────────────────────────────────────
 
     public void ResetForNewRound()
     {
-        if (IsServer) networkTrapsPlaced.Value = 0;
-
         possessedEnemy = null;
         isP2Active     = false;
         cooldownSpeed  = 0f;
         cooldownDamage = 0f;
         cooldownHeal   = 0f;
-        UpdateUI();
     }
 }
