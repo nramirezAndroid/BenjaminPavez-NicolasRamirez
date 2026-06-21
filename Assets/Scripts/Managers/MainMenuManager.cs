@@ -17,18 +17,6 @@ public class MainMenuManager : MonoBehaviour
     public GameObject panelConfirmacion;
     public OptionsManager panelOpciones;
     public GameObject panelScoreboard;
-    
-    [Header("Panel de Red (Multijugador)")]
-    public GameObject panelNetwork; 
-
-    [Header("Sub-Paneles de Red")]
-    public GameObject panelBotonesMultiplayer;
-    
-    public GameObject panelHostWait;      //Pantalla para mostrar la IP al Host
-    public TextMeshProUGUI textoIPHost;   //Texto donde mostraremos su IP
-    
-    public GameObject panelClientJoin;    //Pantalla para que el Cliente escriba
-    public TMP_InputField inputIPCliente; //Campo donde el cliente escribe la IP
 
     // ─────────────────────────────────────────────────────────────────────────
     // PANEL DE RED (Cooperativo Online)
@@ -201,7 +189,6 @@ public class MainMenuManager : MonoBehaviour
         LimpiarEstadoConexion();
     }
 
-
     public void AbrirPantallaHost()
     {
         if (panelBotonesMultiplayer != null) panelBotonesMultiplayer.SetActive(false);
@@ -211,7 +198,6 @@ public class MainMenuManager : MonoBehaviour
         if (botonContinuarHost != null) botonContinuarHost.gameObject.SetActive(false);
         LimpiarEstadoConexion();
     }
-
 
     public async void ConfirmarHost()
     {
@@ -234,7 +220,6 @@ public class MainMenuManager : MonoBehaviour
         if (botonContinuarHost != null) botonContinuarHost.gameObject.SetActive(true);
     }
 
- 
     public void CopiarCodigoAlPortapapeles()
     {
         if (RelayManager.instance == null || string.IsNullOrEmpty(RelayManager.instance.JoinCode))
@@ -244,7 +229,6 @@ public class MainMenuManager : MonoBehaviour
         MostrarEstadoConexion("✓ Código copiado al portapapeles.");
     }
 
-  
     public void ContinuarComoHost()
     {
         NetworkModeData.modoSeleccionado = NetworkModeData.Mode.Host;
@@ -395,7 +379,6 @@ public class MainMenuManager : MonoBehaviour
         if (continuarButton != null) continuarButton.gameObject.SetActive(haySave);
     }
 
-
     private void EjecutarCargaDeNivel(int indexEscena)
     {
         if (LoadingScreenManager.Instance != null)
@@ -409,7 +392,6 @@ public class MainMenuManager : MonoBehaviour
             SceneManager.LoadScene(indexEscena);
         }
     }
-
 
     private void EjecutarCargaDeNivelComoHost(int sceneIndex)
     {
