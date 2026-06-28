@@ -5,25 +5,25 @@ using TMPro;
 public class LevelGoal : MonoBehaviour
 {
     [Header("Requisito para ganar")]
-    public GameObject bossRequerido;
+    [SerializeField] private GameObject bossRequerido;
 
     [Header("Mensaje de Bloqueo (Nota)")]
-    public TextMeshProUGUI textoAviso;
-    public string mensaje = "¡Debes derrotar al jefe para pasar!";
+    [SerializeField] private TextMeshProUGUI textoAviso;
+    [SerializeField] private string mensaje;
 
     [Header("Configuración de Destino")]
-    public string nombreSiguienteNivel = "Masmorra_Nivel2"; 
-    public bool cargarAlInstante = false;
+    [SerializeField] private string nombreSiguienteNivel;
+    [SerializeField] private bool cargarAlInstante;
 
     [Header("Victoria Final (Cooperativo)")]
     [Tooltip("Marca esto SOLO en el LevelGoal del último nivel. " +
              "Los niveles intermedios cargan el siguiente nivel sin mostrar el panel de victoria.")]
-    public bool esVictoriaFinal = false;
+    [SerializeField] private bool esVictoriaFinal;
 
     private SpriteRenderer spriteRenderer;
     private bool estaDesbloqueada = false;
-
     private bool hasTriggered = false;
+    private float checkBossTimer = 0f;
 
     void Start()
     {
@@ -39,8 +39,40 @@ public class LevelGoal : MonoBehaviour
 
     void Update()
     {
-        if (!estaDesbloqueada && bossRequerido == null)
+        if (estaDesbloqueada) return;
+
+        //sin requisito de jefe → siempre desbloqueada
+        if (bossRequerido == null)
+        {
             DesbloquearMeta();
+            return;
+        }
+
+        //con requisito: revisar cada 0.5 s para no saturar FindObjectsByType
+        checkBossTimer += Time.deltaTime;
+        if (checkBossTimer < 0.5f) return;
+        checkBossTimer = 0f;
+
+        //caso 1: el jefe es la instancia directa y fue destruida/despawneada
+        EnemyBase bossEnemy = bossRequerido.GetComponent<EnemyBase>();
+        if (bossEnemy == null || bossEnemy.IsDead)
+        {
+            DesbloquearMeta();
+            return;
+        }
+
+        //caso 2: bossRequerido apunta al prefab (nunca null), o el jefe no se destruye.
+        //buscamos si queda algún EnemyLongSwordKnight vivo en la escena.
+        foreach (EnemyLongSwordKnight vivo in
+            FindObjectsByType<EnemyLongSwordKnight>(
+                UnityEngine.FindObjectsInactive.Exclude,
+                UnityEngine.FindObjectsSortMode.None))
+        {
+            if (!vivo.IsDead) return; //hay uno vivo → seguir esperando
+        }
+
+        //ninguno vivo (o ninguno en escena) → desbloquear
+        DesbloquearMeta();
     }
 
     private void DesbloquearMeta()
@@ -64,53 +96,50 @@ public class LevelGoal : MonoBehaviour
 
             if (esCooperativo)
             {
-                // Modo Cooperativo: SOLO CoopManager gestiona la victoria.
-                // No llamamos a GameManager.WinLevel() para evitar doble lógica en red.
-                // esVictoriaFinal decide si se muestra el panel de resultados
-                // o si simplemente se avanza a nombreSiguienteNivel sin interrumpir.
-                if (CoopManager.instance != null && GameManager.instance != null)
+                //modo Cooperativo: SOLO el servidor decide cuándo avanzar.
+                //el trigger puede dispararse en ambas máquinas (física local de NGO),
+                //pero solo el servidor debe llamar OnGoalReached para evitar RPCs duplicados.
+                bool esServidor = Unity.Netcode.NetworkManager.Singleton != null
+                               && Unity.Netcode.NetworkManager.Singleton.IsServer;
+
+                //log de diagnóstico: permite ver exactamente qué condición falla en consola
+                Debug.Log($"[LevelGoal] Coop trigger — esServidor={esServidor}, " +
+                          $"CoopManager={CoopManager.instance != null}, " +
+                          $"GameManager={GameManager.instance != null}, " +
+                          $"siguienteNivel='{nombreSiguienteNivel}', " +
+                          $"esVictoriaFinal={esVictoriaFinal}");
+
+                if (esServidor && CoopManager.instance != null)
                 {
-                    CoopManager.instance.OnGoalReached(
-                        GameManager.instance.ElapsedTime,
-                        esVictoriaFinal,
-                        nombreSiguienteNivel);
+                    //GameManager puede no estar presente en modo coop; usamos 0f como fallback
+                    float tiempo = GameManager.instance != null ? GameManager.instance.ElapsedTime : 0f;
+                    CoopManager.instance.OnGoalReached(tiempo, esVictoriaFinal, nombreSiguienteNivel);
                 }
             }
-
-            //Notifica al CoopManager la victoria compartida de ambos jugadores
-            if (CoopManager.instance != null && GameManager.instance != null)
+            else
             {
-                // Modo Solitario: comportamiento original, sin red.
+                //modo Solitario: comportamiento original.
                 if (GameManager.instance != null)
                     GameManager.instance.WinLevel();
             }
 
-            //RecordSystem persiste entre sesiones y solo sobreescribe si es mejor tiempo.
-            if (RecordSystem.instance != null && GameManager.instance != null)
+            //detiene físicamente al jugador.
+            //en cooperativo NO se congela: Rigidbody.Static causaría errores "Cannot use linearVelocity"
+            //mientras la transición de escena está en curso. CoopManager maneja el cambio de nivel.
+            if (!esCooperativo)
             {
-                int sceneIdx   = SceneManager.GetActiveScene().buildIndex;
-                string sceneName = SceneManager.GetActiveScene().name;
-                bool esRecord  = RecordSystem.instance.TrySetRecord(
-                    sceneIdx, sceneName, GameManager.instance.ElapsedTime);
-
-                if (esRecord)
-                    Debug.Log($"🏆 ¡Nuevo récord en {sceneName}: {GameManager.instance.GetTimeString()}!");
+                Rigidbody2D playerRb = collision.GetComponent<Rigidbody2D>();
+                if (playerRb != null)
+                {
+                    playerRb.linearVelocity = Vector2.zero;
+                    playerRb.bodyType       = RigidbodyType2D.Static;
+                }
             }
 
-            //Detiene físicamente al jugador
-            Rigidbody2D playerRb = collision.GetComponent<Rigidbody2D>();
-            if (playerRb != null)
-            {
-                playerRb.linearVelocity = Vector2.zero; 
-                playerRb.bodyType       = RigidbodyType2D.Static; 
-            }
-
-            // cargarAlInstante solo aplica al modo Solitario.
-            // En Cooperativo, CoopManager ya decide cuándo cargar el siguiente nivel
-            // (vía ClientRpc, para que ambos jugadores carguen sincronizados).
+            //cargarAlInstante solo aplica al modo Solitario.
             if (!esCooperativo && cargarAlInstante)
             {
-                Time.timeScale = 1f; 
+                Time.timeScale = 1f;
                 if (LoadingScreenManager.Instance != null)
                     LoadingScreenManager.Instance.LoadScene(nombreSiguienteNivel);
                 else

@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 3925882819206019284}
   - component: {fileID: 8546404392373847250}
   - component: {fileID: 2577877929926487825}
-  - component: {fileID: 8112479868607386731}
   - component: {fileID: 7517183481985189476}
   - component: {fileID: 4174161706168197561}
   - component: {fileID: 5660702463367985521}
@@ -19,7 +18,9 @@ GameObject:
   - component: {fileID: 8909545689555613632}
   - component: {fileID: 1067113376582066843}
   - component: {fileID: 2751271755664658230}
-  m_Layer: 0
+  - component: {fileID: -1615198606478892875}
+  - component: {fileID: 5842235650732029863}
+  m_Layer: 10
   m_Name: Player
   m_TagString: Player
   m_Icon: {fileID: 0}
@@ -128,67 +129,6 @@ MonoBehaviour:
   AutoObjectParentSync: 1
   SyncOwnerTransformWhenParented: 1
   AllowOwnerToParent: 0
---- !u!114 &8112479868607386731
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 754659200096010587}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7f6e06083a9d88048aa442c9941653f6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Player
-  ShowTopMostFoldoutHeaderGroup: 1
-  healthImage: {fileID: 0}
-  dashCooldownImage: {fileID: 0}
-  dashChargesText: {fileID: 0}
-  soundCtrl: {fileID: 7517183481985189476}
-  animator: {fileID: 8909545689555613632}
-  walkSpeed: 5
-  sprintSpeed: 13
-  sprintDuration: 0.3
-  maxSprintCharges: 1
-  sprintCooldown: 1.5
-  jumpForce: 7
-  maxJumps: 2
-  jumpHoldForce: 25
-  jumpHoldMaxTime: 0.2
-  jumpCutMultiplier: 0.4
-  crouchSpeedMultiplier: 0.5
-  crouchHeightMultiplier: 0.55
-  wallSlideSpeed: 2
-  wallSlideDuration: 1.2
-  wallJumpForce: {x: 6, y: 5}
-  wallJumpDuration: 0.35
-  groundCheck: {fileID: 3086589424590151041}
-  wallCheck: {fileID: 1142464683040857532}
-  checkRadius: 0.2
-  groundLayer:
-    serializedVersion: 2
-    m_Bits: 192
-  wallLayer:
-    serializedVersion: 2
-    m_Bits: 128
-  attackPoint: {fileID: 2666879588592517122}
-  attackRange: 0.7
-  enemyLayers:
-    serializedVersion: 2
-    m_Bits: 256
-  attackDamage: 25
-  attackCooldown: 0.5
-  maxHealth: 100
-  voidYThreshold: -20
-  networkHealth:
-    UpdateTraits:
-      MinSecondsBetweenUpdates: 0
-      MaxSecondsBetweenUpdates: 0
-    m_InternalValue: 100
-  knockbackForceX: 8
-  knockbackForceY: 5
-  knockbackDuration: 0.2
-  isTalking: 0
 --- !u!114 &7517183481985189476
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -414,6 +354,110 @@ AudioListener:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 754659200096010587}
   m_Enabled: 1
+--- !u!114 &-1615198606478892875
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 754659200096010587}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.Components.NetworkTransform
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkTransformExpanded: 0
+  AutoOwnerAuthorityTickOffset: 1
+  PositionInterpolationType: 0
+  RotationInterpolationType: 0
+  ScaleInterpolationType: 0
+  PositionLerpSmoothing: 1
+  PositionMaxInterpolationTime: 0.1
+  RotationLerpSmoothing: 1
+  RotationMaxInterpolationTime: 0.1
+  ScaleLerpSmoothing: 1
+  ScaleMaxInterpolationTime: 0.1
+  AuthorityMode: 0
+  TickSyncChildren: 0
+  UseUnreliableDeltas: 0
+  SyncPositionX: 1
+  SyncPositionY: 1
+  SyncPositionZ: 1
+  SyncRotAngleX: 1
+  SyncRotAngleY: 1
+  SyncRotAngleZ: 1
+  SyncScaleX: 0
+  SyncScaleY: 0
+  SyncScaleZ: 0
+  PositionThreshold: 0.001
+  RotAngleThreshold: 0.01
+  ScaleThreshold: 0.01
+  UseQuaternionSynchronization: 0
+  UseQuaternionCompression: 0
+  UseHalfFloatPrecision: 0
+  InLocalSpace: 0
+  SwitchTransformSpaceWhenParented: 0
+  Interpolate: 1
+  SlerpPosition: 0
+--- !u!114 &5842235650732029863
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 754659200096010587}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a727cd470662c0a4fa7aa4e177aaf149, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerController
+  ShowTopMostFoldoutHeaderGroup: 1
+  healthImage: {fileID: 0}
+  dashCooldownImage: {fileID: 0}
+  soundCtrl: {fileID: 7517183481985189476}
+  animator: {fileID: 8909545689555613632}
+  maxHealth: 100
+  voidYThreshold: -80
+  networkHealth:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 100
+  attackPoint: {fileID: 2666879588592517122}
+  attackRange: 0.6
+  enemyLayers:
+    serializedVersion: 2
+    m_Bits: 256
+  attackDamage: 40
+  attackCooldown: 0.5
+  knockbackForceX: 8
+  knockbackForceY: 5
+  knockbackDuration: 0.2
+  walkSpeed: 5
+  sprintSpeed: 13
+  sprintDuration: 0.3
+  maxSprintCharges: 1
+  sprintCooldown: 1.5
+  jumpForce: 7
+  maxJumps: 2
+  jumpHoldForce: 25
+  jumpHoldMaxTime: 0.2
+  jumpCutMultiplier: 0.4
+  crouchSpeedMultiplier: 0.5
+  crouchHeightMultiplier: 0.55
+  wallSlideSpeed: 2
+  wallJumpForce: {x: 10, y: 15}
+  wallJumpDuration: 0.2
+  groundCheck: {fileID: 3086589424590151041}
+  wallCheck: {fileID: 1142464683040857532}
+  checkRadius: 0.2
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 192
+  wallLayer:
+    serializedVersion: 2
+    m_Bits: 128
 --- !u!1 &2267039538963430472
 GameObject:
   m_ObjectHideFlags: 0

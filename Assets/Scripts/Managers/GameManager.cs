@@ -7,25 +7,37 @@ public class GameManager : MonoBehaviour
     public static GameManager instance;
 
     [Header("Configuración de Sistema")]
-    public int targetFPS = 60;
+    [SerializeField] private int targetFPS;
 
     [Header("UI y Menús")]
-    public GameObject pauseMenuUI;
-    public GameObject LvlComplete;
-    public TextMeshProUGUI timerText;
-    public TextMeshProUGUI finalTimeText;
-    public GameObject[] hudElements;
+    [SerializeField] private GameObject pauseMenuUI;
+    [SerializeField] private GameObject LvlComplete;
+    [SerializeField] private TextMeshProUGUI timerText;
+    [SerializeField] private TextMeshProUGUI finalTimeText;
+    [SerializeField] private GameObject[] hudElements;
 
-    public OptionsManager panelOpciones;    
+    [SerializeField] private OptionsManager panelOpciones;
 
     [Header("Estado del Juego")]
     private float elapsedTime = 0f;
     private bool isRunning    = true;
-    public bool isPaused      = false;
+    private bool _isPaused    = false;
     private bool gameEnded    = false;
 
+    //propiedad de solo lectura para otros scripts
+    public bool IsPaused => _isPaused;
+
+    //compatibilidad interna: alias privado
+    private bool isPaused { get => _isPaused; set => _isPaused = value; }
+
     [Header("Navegación")]
-    public int mainMenuSceneIndex = 0;
+    [SerializeField] private int mainMenuSceneIndex;
+
+    [Header("Botones deshabilitados en Multijugador")]
+    [Tooltip("GameObject del botón Guardar y Salir — se oculta en modo Host/Cliente")]
+    [SerializeField] private GameObject botonGuardarYSalir;
+    [Tooltip("GameObject del botón Reiniciar Nivel — se oculta en modo Host/Cliente")]
+    [SerializeField] private GameObject botonReiniciarNivel;
 
     void Awake()
     {
@@ -36,9 +48,21 @@ public class GameManager : MonoBehaviour
         QualitySettings.vSyncCount  = 0;
     }
 
+    // True cuando la partida es cooperativa en red (Host o Cliente)
+    private bool EsMultijugador =>
+        NetworkModeData.modoSeleccionado == NetworkModeData.Mode.Host ||
+        NetworkModeData.modoSeleccionado == NetworkModeData.Mode.Cliente;
+
     void Start()
     {
         if (panelOpciones != null) panelOpciones.gameObject.SetActive(false);
+
+        //ocultar opciones que no tienen sentido en multijugador
+        if (EsMultijugador)
+        {
+            if (botonGuardarYSalir  != null) botonGuardarYSalir.SetActive(false);
+            if (botonReiniciarNivel != null) botonReiniciarNivel.SetActive(false);
+        }
 
         if (SaveSystem.instance != null && SaveSystem.instance.isLoadingGame)
         {
@@ -87,7 +111,7 @@ public class GameManager : MonoBehaviour
     {
         elapsedTime += cantidad;
         
-        //Evitamos que el tiempo sea negativo
+        //evitamos que el tiempo sea negativo
         if (elapsedTime < 0f)
         {
             elapsedTime = 0f;
@@ -126,13 +150,19 @@ public class GameManager : MonoBehaviour
 
     public void SaveAndQuit()
     {
+        if (EsMultijugador)
+        {
+            Debug.LogWarning("[GameManager] SaveAndQuit ignorado: no disponible en multijugador.");
+            return;
+        }
+
         if (SaveSystem.instance == null)
         {
             Debug.LogError("❌ No se encontró SaveSystem en la escena.");
             return;
         }
 
-        PlayerControllerComplete player = FindAnyObjectByType<PlayerControllerComplete>();
+        PlayerController player = FindAnyObjectByType<PlayerController>();
 
         GameObject[] enemiesInScene = GameObject.FindGameObjectsWithTag("Damage");
         List<string> aliveEnemies   = new List<string>();
@@ -172,6 +202,7 @@ public class GameManager : MonoBehaviour
         gameEnded        = false;
         Cursor.visible   = true;
         Cursor.lockState = CursorLockMode.None;
+
         SceneManager.LoadScene(mainMenuSceneIndex);
     }
 
@@ -193,7 +224,7 @@ public class GameManager : MonoBehaviour
             LvlComplete.transform.SetAsLastSibling();
         }
 
-        //Como usamos elapsedTime, el finalTimeText se actualizará con los segundos sumados/restados correctamente
+        //como usamos elapsedTime, el finalTimeText se actualizará con los segundos sumados/restados correctamente
         if (finalTimeText != null)
             finalTimeText.text = "Tiempo: " + GetTimeString();
 
@@ -202,7 +233,7 @@ public class GameManager : MonoBehaviour
         Cursor.visible   = true;
         Cursor.lockState = CursorLockMode.None;
 
-        //Guarda el récord
+        //guarda el récord
     if (RecordSystem.instance != null)
     {
         int scene = SceneManager.GetActiveScene().buildIndex;
@@ -224,6 +255,12 @@ public class GameManager : MonoBehaviour
 
     public void RestartLevel()
     {
+        if (EsMultijugador)
+        {
+            Debug.LogWarning("[GameManager] RestartLevel ignorado: no disponible en multijugador.");
+            return;
+        }
+
         Time.timeScale = 1f;
         isPaused       = false;
         gameEnded      = false;

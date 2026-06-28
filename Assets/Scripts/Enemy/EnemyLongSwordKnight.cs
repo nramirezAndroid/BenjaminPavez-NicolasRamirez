@@ -5,15 +5,14 @@ using Unity.Netcode;
 public class EnemyLongSwordKnight : EnemyBase 
 {
     [Header("Configuración de Persecución (IA)")]
-    public Transform player;
-    public float detectionRadius = 7f; 
-    public float speed = 1.6f;
+    [SerializeField] private float detectionRadius;
+    [SerializeField] private float speed;
 
     [Header("IA: Detección de Borde")]
-    public bool usarDeteccionDeBordes = false; 
-    public float edgeCheckDistance = 0.5f;   
-    public float groundCheckDepth = 2.0f; 
-    public LayerMask groundLayer;            
+    [SerializeField] private bool usarDeteccionDeBordes;
+    [SerializeField] private float edgeCheckDistance;
+    [SerializeField] private float groundCheckDepth;
+    [SerializeField] private LayerMask groundLayer;
 
     [Header("Mecánica de Espadón (Tajo Estático Fijo)")]
     [SerializeField] private Transform attackPoint;
@@ -30,7 +29,7 @@ public class EnemyLongSwordKnight : EnemyBase
     private float cooldownTimer;
     private bool isAttacking;
 
-    //Sincroniza la dirección en la que mira para todos los clientes
+    //sincroniza la dirección en la que mira para todos los clientes
     public NetworkVariable<bool> networkIsFacingRight = new NetworkVariable<bool>(
         false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server
     );
@@ -51,18 +50,12 @@ public class EnemyLongSwordKnight : EnemyBase
     {
         maxHealth = 200; 
         base.Start(); 
-        
-        //Solo el servidor necesita buscar y seguir al jugador
-        if (IsServer && player == null)
-        {
-            GameObject p = GameObject.FindGameObjectWithTag("Player");
-            if (p != null) player = p.transform;
-        }
+        //ya no buscamos al jugador aquí — GetPlayer1() lo encontrará en Update()
     }
 
     void Update()
     {
-        //Toda la IA, cooldowns e inputs ocurren en el Servidor
+        //⭐ CRÍTICO: Solo el servidor ejecuta IA
         if (!IsServer) return;
 
         if (cooldownTimer > 0) cooldownTimer -= Time.deltaTime;
@@ -76,36 +69,48 @@ public class EnemyLongSwordKnight : EnemyBase
 
         if (isAttacking) return;
 
+        //si está poseído por P2, no ejecuta IA de persecución
         if (networkIsPossessed.Value)
         {
-            //El Host (P2) puede presionar Espacio para atacar manualmente
+            //el que controla (P2) puede presionar Espacio para atacar manualmente
             if (Input.GetKeyDown(KeyCode.Space) && cooldownTimer <= 0)
             {
                 StartCoroutine(SwordAttackRoutine());
                 return;
             }
 
-            //Sincroniza hacia dónde mira basado en cómo lo mueve el P2
-            if (rb.linearVelocity.x > 0.1f && !networkIsFacingRight.Value) networkIsFacingRight.Value = true;
-            else if (rb.linearVelocity.x < -0.1f && networkIsFacingRight.Value) networkIsFacingRight.Value = false;
+            //sincroniza hacia dónde mira basado en cómo lo mueve el P2
+            if (rb.linearVelocity.x > 0.1f && !networkIsFacingRight.Value) 
+                networkIsFacingRight.Value = true;
+            else if (rb.linearVelocity.x < -0.1f && networkIsFacingRight.Value) 
+                networkIsFacingRight.Value = false;
 
-            //Animación de caminar manual
+            //animación de caminar manual
             if (anim != null) anim.SetBool("enMovimiento", Mathf.Abs(rb.linearVelocity.x) > 0.1f);
             
             return;
         }
 
-        if (player == null) return;
+        //⭐ Obtén al jugador de forma segura con GetPlayer1()
+        PlayerController player = GetPlayer1();
+        if (player == null || player.IsDead) 
+            return;
 
-        float distanceToPlayer = Vector2.Distance(transform.position, player.position);
+        //⭐ Usa GetDistanceToPlayer() en lugar de calcular manualmente
+        float distanceToPlayer = GetDistanceToPlayer();
 
         if (distanceToPlayer < detectionRadius)
         {
-            float directionX = player.position.x - transform.position.x;
+            //⭐ Usa GetDirectionToPlayer() para obtener solo la dirección X
+            Vector3 directionToPlayer = GetDirectionToPlayer();
+            float directionX = directionToPlayer.x;
 
-            if (directionX > 0 && !networkIsFacingRight.Value) networkIsFacingRight.Value = true;
-            else if (directionX < 0 && networkIsFacingRight.Value) networkIsFacingRight.Value = false;
+            if (directionX > 0 && !networkIsFacingRight.Value) 
+                networkIsFacingRight.Value = true;
+            else if (directionX < 0 && networkIsFacingRight.Value) 
+                networkIsFacingRight.Value = false;
 
+            //comprueba si el jugador está en rango de ataque
             bool playerEnRango = attackPoint != null &&
                                  Physics2D.OverlapCircle(attackPoint.position, attackRange, playerLayer) != null;
 
@@ -115,6 +120,7 @@ public class EnemyLongSwordKnight : EnemyBase
                 return;
             }
 
+            //si no está en rango de ataque, persigue
             if (!playerEnRango)
             {
                 if (!usarDeteccionDeBordes || CheckGroundAhead(directionX))
@@ -142,10 +148,10 @@ public class EnemyLongSwordKnight : EnemyBase
 
     void FixedUpdate()
     {
-        //La física la sigue calculando exclusivamente el servidor
+        //la física la sigue calculando exclusivamente el servidor
         if (!IsServer) return;
 
-        //Si está poseído, la física de movimiento horizontal la maneja EnemyBase mediante MoveAsPossessed()
+        //si está poseído, la física de movimiento horizontal la maneja EnemyBase mediante MoveAsPossessed()
         if (networkIsPossessed.Value) return;
 
         if (isDead || isStunned || isAttacking)
@@ -167,7 +173,7 @@ public class EnemyLongSwordKnight : EnemyBase
         
         if (anim != null) anim.SetBool("enMovimiento", false);
         
-        //Dispara la animación en todos los clientes al mismo tiempo
+        //dispara la animación en todos los clientes al mismo tiempo
         TriggerAttackAnimClientRpc();
 
         yield return new WaitForSeconds(attackAnticipationTime);
@@ -185,11 +191,11 @@ public class EnemyLongSwordKnight : EnemyBase
             yield break;
         }
 
-        //El Servidor calcula quién recibe el daño
+        //el Servidor calcula quién recibe el daño
         Collider2D hitPlayer = Physics2D.OverlapCircle(attackPoint.position, attackRange, playerLayer);
         if (hitPlayer != null)
         {
-            PlayerControllerComplete playerScript = hitPlayer.GetComponent<PlayerControllerComplete>();
+            PlayerController playerScript = hitPlayer.GetComponent<PlayerController>();
             if (playerScript != null)
                 playerScript.TakeDamage(swordDamage, transform);
         }
@@ -206,7 +212,7 @@ public class EnemyLongSwordKnight : EnemyBase
         if (anim != null) anim.SetTrigger("Attack"); 
     }
 
-    //Evento que se ejecuta en las pantallas de todos los jugadores cuando el servidor cambia la dirección
+    //evento que se ejecuta en las pantallas de todos los jugadores cuando el servidor cambia la dirección
     private void OnFacingRightChanged(bool previousValue, bool isRight)
     {
         Vector3 localScale = transform.localScale;
@@ -225,22 +231,16 @@ public class EnemyLongSwordKnight : EnemyBase
         return hit.collider != null;
     }
 
-    
-    [ClientRpc]
-    protected override void TakeDamageEffectsClientRpc(Vector3 sourcePosition)
+    protected override void OnTakeDamageLocal(Vector3 sourcePosition)
     {
-        base.TakeDamageEffectsClientRpc(sourcePosition);
-        
-        //Detiene la animación de movimiento al recibir un golpe
+        base.OnTakeDamageLocal(sourcePosition);
         if (anim != null) anim.SetBool("enMovimiento", false);
     }
 
-    [ClientRpc]
-    protected override void DieEffectsClientRpc()
+    protected override void OnDieLocal()
     {
-        base.DieEffectsClientRpc();
-        
-        if (anim != null) anim.ResetTrigger("Hurt"); 
+        base.OnDieLocal();
+        if (anim != null) anim.ResetTrigger("Hurt");
     }
 
     private void OnDrawGizmosSelected()

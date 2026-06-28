@@ -5,26 +5,25 @@ using Unity.Netcode;
 public class EnemyFlyingShooter : EnemyBase
 {
     [Header("Referencias de Ataque")]
-    public Transform player;
-    public GameObject projectilePrefab;
-    public Transform firePoint;
+    [SerializeField] private GameObject projectilePrefab;
+    [SerializeField] private Transform firePoint;
 
     [Header("Configuración de Vuelo")]
-    public float detectionRange = 12f;   
-    public float speed = 4f;            
-    public float followDistance = 5f;    
+    [SerializeField] private float detectionRange;
+    [SerializeField] private float speed;
+    [SerializeField] private float followDistance;
 
     [Header("Efecto de Flote Sinusoidal")]
-    public float waveSpeed = 3f;        
-    public float waveMagnitude = 1f;    
+    [SerializeField] private float waveSpeed;
+    [SerializeField] private float waveMagnitude;
 
     [Header("Configuración de Disparo")]
-    public float fireCooldown = 2f;     
+    [SerializeField] private float fireCooldown;
     private float fireTimer;
 
     [Header("Efecto Visual de Daño")]
-    public Color flashColor = Color.red;
-    public float flashDuration = 0.1f;
+    [SerializeField] private Color flashColor;
+    [SerializeField] private float flashDuration;
 
     private bool isFacingRight = false;
     private float timeCounter;
@@ -36,12 +35,20 @@ public class EnemyFlyingShooter : EnemyBase
         base.Start(); 
 
         if (rb != null) rb.gravityScale = 0f;
-
-        //El Servidor se encarga de buscar al jugador
-        if (IsServer && player == null)
+        
+        //⭐ BUSCA el FirePoint automáticamente en los children
+        if (firePoint == null)
         {
-            GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
-            if (playerObj != null) player = playerObj.transform;
+            firePoint = transform.Find("FirePoint");
+            
+            if (firePoint == null)
+            {
+                Debug.LogWarning($"[EnemyFlyingShooter] {gameObject.name} - FirePoint no encontrado en children!");
+            }
+            else
+            {
+                Debug.Log($"[EnemyFlyingShooter] {gameObject.name} - FirePoint encontrado automáticamente");
+            }
         }
 
         fireTimer = fireCooldown;
@@ -49,24 +56,28 @@ public class EnemyFlyingShooter : EnemyBase
 
     void Update()
     {
-        //La IA de los enemigos solo existe en el Servidor
+        //⭐ CRÍTICO: Solo el servidor ejecuta IA
         if (!IsServer) return;
 
         if (networkIsPossessed.Value) return;
 
+        //⭐ Obtén al jugador de forma segura con GetPlayer1()
+        PlayerController player = GetPlayer1();
+        
         if (isDead || isStunned || player == null)
         {
             if (rb != null && !isDead) rb.linearVelocity = Vector2.zero;
             return;
         }
 
-        float distanceToPlayer = Vector2.Distance(transform.position, player.position);
+        //⭐ Usa GetDistanceToPlayer() en lugar de calcular manualmente
+        float distanceToPlayer = GetDistanceToPlayer();
 
         if (distanceToPlayer <= detectionRange)
         {
-            ManejarGiroMirada();
-            ManejarMovimientoVolador();
-            ManejarTemporizadorDisparo();
+            ManejarGiroMirada(player);
+            ManejarMovimientoVolador(player);
+            ManejarTemporizadorDisparo(player);
         }
         else
         {
@@ -77,10 +88,13 @@ public class EnemyFlyingShooter : EnemyBase
         }
     }
 
-    void ManejarMovimientoVolador()
+    void ManejarMovimientoVolador(PlayerController player)
     {
-        Vector2 direccionAlPlayer = (player.position - transform.position).normalized;
-        Vector2 posicionObjetivo = (Vector2)player.position - (direccionAlPlayer * followDistance);
+        if (player == null) return;
+
+        //⭐ Usa GetDirectionToPlayer() para obtener la dirección
+        Vector2 direccionAlPlayer = GetDirectionToPlayer();
+        Vector2 posicionObjetivo = (Vector2)player.transform.position - (direccionAlPlayer * followDistance);
         Vector2 movimientoBase = (posicionObjetivo - (Vector2)transform.position).normalized * speed;
 
         timeCounter += Time.deltaTime;
@@ -89,31 +103,31 @@ public class EnemyFlyingShooter : EnemyBase
         if (rb != null)
         {
             rb.linearVelocity = new Vector2(movimientoBase.x, movimientoBase.y + floteVertical);
-            if (anim != null) anim.SetBool("enMovimiento", rb.linearVelocity.magnitude > 0.2f);
+            
         }
     }
 
-    void ManejarTemporizadorDisparo()
+    void ManejarTemporizadorDisparo(PlayerController player)
     {
         fireTimer -= Time.deltaTime;
         if (fireTimer <= 0f)
         {
-            DispararProyectil();
+            DispararProyectil(player);
             fireTimer = fireCooldown;
         }
     }
 
-    void DispararProyectil()
+    void DispararProyectil(PlayerController player)
     {
-        if (projectilePrefab == null || firePoint == null) return;
+        if (projectilePrefab == null || firePoint == null || player == null) return;
 
-        //Avisa a los clientes que disparen la animación
+        //avisa a los clientes que disparen la animación
         TriggerAttackAnimClientRpc();
 
-        Vector2 direccionDisparo = (player.position - firePoint.position).normalized;
+        Vector2 direccionDisparo = (player.transform.position - firePoint.position).normalized;
         float angulo = Mathf.Atan2(direccionDisparo.y, direccionDisparo.x) * Mathf.Rad2Deg;
 
-        //El servidor instancia y Spawnea el proyectil en la red
+        //el servidor instancia y Spawnea el proyectil en la red
         GameObject projectile = Instantiate(projectilePrefab, firePoint.position, Quaternion.Euler(0, 0, angulo));
         projectile.GetComponent<NetworkObject>().Spawn();
     }
@@ -124,10 +138,14 @@ public class EnemyFlyingShooter : EnemyBase
         if (anim != null) anim.SetTrigger("Attack");
     }
 
-    void ManejarGiroMirada()
+    void ManejarGiroMirada(PlayerController player)
     {
-        if (player.position.x > transform.position.x && !isFacingRight) Flip();
-        else if (player.position.x < transform.position.x && isFacingRight) Flip();
+        if (player == null) return;
+        
+        if (player.transform.position.x > transform.position.x && !isFacingRight) 
+            Flip();
+        else if (player.transform.position.x < transform.position.x && isFacingRight) 
+            Flip();
     }
 
     private void Flip()
@@ -138,13 +156,9 @@ public class EnemyFlyingShooter : EnemyBase
         transform.localScale = localScale;
     }
 
-
-
-    [ClientRpc]
-    protected override void TakeDamageEffectsClientRpc(Vector3 sourcePosition)
+    protected override void OnTakeDamageLocal(Vector3 sourcePosition)
     {
-        base.TakeDamageEffectsClientRpc(sourcePosition); 
-
+        base.OnTakeDamageLocal(sourcePosition);
         if (spriteRenderer != null)
         {
             StopCoroutine(nameof(FlashRoutine));
@@ -152,16 +166,11 @@ public class EnemyFlyingShooter : EnemyBase
         }
     }
 
-    [ClientRpc]
-    protected override void DieEffectsClientRpc()
+    protected override void OnDieLocal()
     {
-        base.DieEffectsClientRpc(); 
-        
-        this.enabled = false; 
-        if (rb != null)
-        {
-            rb.gravityScale = 1f;
-        }
+        base.OnDieLocal();
+        this.enabled = false;
+        if (rb != null) rb.gravityScale = 1f;
     }
 
     private IEnumerator FlashRoutine()

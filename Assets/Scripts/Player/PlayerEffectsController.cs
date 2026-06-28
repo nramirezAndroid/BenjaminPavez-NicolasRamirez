@@ -21,14 +21,17 @@ public class PlayerEffectsController : MonoBehaviour
     public void PlayAttackSlash(bool isFacingRight)
     {
         if (tajoVfxPrefab != null && attackPoint != null)
-        {
-            //Instancia el tajo en la punta del ataque
-            GameObject tajoInstance = Instantiate(tajoVfxPrefab, attackPoint.position, Quaternion.identity);
-            
-            //Voltea el sprite del tajo si el jugador mira a la izquierda
-            Vector3 escalaTajo = tajoInstance.transform.localScale;
-            escalaTajo.x = isFacingRight ? Mathf.Abs(escalaTajo.x) : -Mathf.Abs(escalaTajo.x);
-            tajoInstance.transform.localScale = escalaTajo;
-        }
+            PlayAttackSlashAt(attackPoint.position, isFacingRight);
+    }
+
+    //versión con posición explícita — usada por el ClientRpc para reproducir el VFX en P2
+    public void PlayAttackSlashAt(Vector3 position, bool isFacingRight)
+    {
+        if (tajoVfxPrefab == null) return;
+
+        GameObject tajoInstance = Instantiate(tajoVfxPrefab, position, Quaternion.identity);
+        Vector3 escalaTajo = tajoInstance.transform.localScale;
+        escalaTajo.x = isFacingRight ? Mathf.Abs(escalaTajo.x) : -Mathf.Abs(escalaTajo.x);
+        tajoInstance.transform.localScale = escalaTajo;
     }
 }

@@ -39,21 +39,21 @@ public class LoadingScreenManager : MonoBehaviour
         StartCoroutine(LoadSceneAsync(sceneBuildIndex));
     }
 
-    //Corutina para Carga por Nombre
+    //corutina para Carga por Nombre
     private IEnumerator LoadSceneAsync(string sceneName)
     {
         AsyncOperation operation = SceneManager.LoadSceneAsync(sceneName);
         yield return StartCoroutine(LoadingLoop(operation));
     }
 
-    //Corutina para Carga por Índice
+    //corutina para Carga por Índice
     private IEnumerator LoadSceneAsync(int sceneBuildIndex)
     {
         AsyncOperation operation = SceneManager.LoadSceneAsync(sceneBuildIndex);
         yield return StartCoroutine(LoadingLoop(operation));
     }
 
-    //Bucle unificado que procesa la barra de carga de forma suave
+    //bucle unificado que procesa la barra de carga de forma suave
     private IEnumerator LoadingLoop(AsyncOperation operation)
     {
         loadingCanvas.SetActive(true);

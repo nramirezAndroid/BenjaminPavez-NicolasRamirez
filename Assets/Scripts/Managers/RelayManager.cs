@@ -6,35 +6,24 @@ using Unity.Services.Core;
 using Unity.Services.Multiplayer;
 using UnityEngine;
 
-/// <summary>
-/// Maneja la conexión ONLINE real (sin LAN, sin port forwarding) usando el
-/// Multiplayer Services SDK de Unity (com.unity.services.multiplayer),
-/// que reemplaza al paquete standalone "Relay" (deprecado).
-///
-/// Bajo el capó sigue siendo Relay, pero ahora se gestiona a través del
-/// concepto de "Session": el Host crea una sesión y recibe un código de
-/// sala; el Cliente se une con ese código. El SDK configura el
-/// UnityTransport automáticamente — ya no hace falta tocarlo a mano.
-///
-/// Reemplaza la conexión directa por IP de CoopNetworkManager.
-/// Debe vivir en un GameObject persistente (DontDestroyOnLoad) o en la escena de menú.
-/// </summary>
 public class RelayManager : MonoBehaviour
 {
     public static RelayManager instance;
 
     [Header("Configuración")]
     [Tooltip("Máximo de jugadores en la sesión, incluyendo al host. En modo coop 1vs1, esto es 2.")]
-    public int maxPlayers = 2;
+    [SerializeField] private int maxPlayers;
 
-    // Sesión activa (válida tanto para host como para cliente una vez conectado)
+    //sesión activa (válida tanto para host como para cliente una vez conectado)
     private ISession activeSession;
 
-    // Código de sala generado al crear el host, usado para mostrarlo en UI
+    //código de sala generado al crear el host, usado para mostrarlo en UI
     public string JoinCode => activeSession?.Code;
 
-    // Estado de inicialización de UGS
+    //estado de inicialización de UGS
     private bool servicesInitialized = false;
+
+    public string PendingConnectionError { get; set; }
 
     void Awake()
     {
@@ -49,14 +38,6 @@ public class RelayManager : MonoBehaviour
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // INICIALIZACIÓN DE UNITY GAMING SERVICES
-    // ─────────────────────────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Inicializa UGS y hace login anónimo. Debe llamarse antes de crear o unirse a una sala.
-    /// Es seguro llamarlo varias veces; solo se inicializa una vez.
-    /// </summary>
     public async Task<bool> EnsureServicesInitialized()
     {
         if (servicesInitialized) return true;
@@ -83,15 +64,6 @@ public class RelayManager : MonoBehaviour
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // HOST: Crear sesión y obtener código
-    // ─────────────────────────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Crea una sesión usando Relay como transporte y configura el NetworkManager
-    /// automáticamente como Host. Devuelve el código de sala (6 caracteres)
-    /// para mostrarlo al jugador, o null si falló.
-    /// </summary>
     public async Task<string> CreateRelayHost()
     {
         bool ready = await EnsureServicesInitialized();
@@ -102,12 +74,12 @@ public class RelayManager : MonoBehaviour
             var options = new SessionOptions
             {
                 MaxPlayers = maxPlayers
-            }.WithRelayNetwork(); // Usa Relay (NAT traversal) en vez de IP directa
+            }.WithRelayNetwork(); //usa Relay (NAT traversal) en vez de IP directa
 
             activeSession = await MultiplayerService.Instance.CreateSessionAsync(options);
 
-            // El SDK ya configuró el UnityTransport y arrancó el NetworkManager como Host.
-            // No hace falta llamar a NetworkManager.Singleton.StartHost() manualmente.
+            //el SDK ya configuró el UnityTransport y arrancó el NetworkManager como Host.
+            //no hace falta llamar a NetworkManager.Singleton.StartHost() manualmente.
 
             Debug.Log($"[RelayManager] Sesión creada. Código: {activeSession.Code}");
             return activeSession.Code;
@@ -119,14 +91,6 @@ public class RelayManager : MonoBehaviour
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // CLIENTE: Unirse con código
-    // ─────────────────────────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Se une a una sesión existente usando el código de 6 caracteres.
-    /// Devuelve true si la conexión se inició correctamente.
-    /// </summary>
     public async Task<bool> JoinRelayAsClient(string joinCode)
     {
         bool ready = await EnsureServicesInitialized();
@@ -138,29 +102,34 @@ public class RelayManager : MonoBehaviour
             return false;
         }
 
+        //seteamos el error ANTES del primer await para evitar race conditions:
+        //si el SDK recarga la escena durante el join, el error ya está guardado
+        //y Start() lo mostrará aunque la continuación del catch llegue tarde.
+        PendingConnectionError = "❌ Código inválido o sala no encontrada.\nVerifica que el P1 ya haya creado la sala y vuelve a intentarlo.";
+
         try
         {
-            activeSession = await MultiplayerService.Instance.JoinSessionByCodeAsync(joinCode.Trim().ToUpper());
+            //await directo — sin Task.WhenAny + Task.Delay.
+            //task.WhenAny deja un Task.Delay corriendo en background que, al disparar,
+            //puede interferir con el SynchronizationContext de Unity y causar freeze.
+            //el SDK de Lobby tiene su propio timeout HTTP interno; si el código es
+            //inválido, la excepción llega en ~1 s (como vemos en los logs).
+            activeSession = await MultiplayerService.Instance
+                .JoinSessionByCodeAsync(joinCode.Trim().ToUpper());
 
-            // El SDK configura el UnityTransport y arranca el NetworkManager como Cliente automáticamente.
-
+            //éxito: limpiar el error preemptivo
+            PendingConnectionError = null;
             return true;
         }
         catch (Exception e)
         {
-            Debug.LogError($"[RelayManager] Error al unirse a la sesión: {e.Message}");
+            Debug.LogWarning($"[RelayManager] Join fallido: {e.Message}");
+            //pendingConnectionError ya fue seteado antes del await.
+            activeSession = null;
             return false;
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // LIMPIEZA
-    // ─────────────────────────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Sale de la sesión activa (host o cliente) y limpia el estado local.
-    /// Llamar al volver al menú principal o al desconectarse.
-    /// </summary>
     public async Task LeaveSession()
     {
         if (activeSession != null)

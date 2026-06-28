@@ -8,71 +8,48 @@ using Unity.Netcode;
 
 public class MainMenuManager : MonoBehaviour
 {
-    // ─────────────────────────────────────────────────────────────────────────
-    // PANELES PRINCIPALES
-    // ─────────────────────────────────────────────────────────────────────────
-
     [Header("Paneles del Menú")]
-    public GameObject panelMenuPrincipal;
-    public GameObject panelConfirmacion;
-    public OptionsManager panelOpciones;
-    public GameObject panelScoreboard;
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // PANEL DE RED (Cooperativo Online)
-    // ─────────────────────────────────────────────────────────────────────────
+    [SerializeField] private GameObject panelMenuPrincipal;
+    [SerializeField] private GameObject panelConfirmacion;
+    [SerializeField] private OptionsManager panelOpciones;
+    [SerializeField] private GameObject panelScoreboard;
 
     [Header("Panel de Red (Cooperativo)")]
-    public GameObject panelNetwork;
+    [SerializeField] private GameObject panelNetwork;
 
     [Header("Sub-paneles de Red")]
-    public GameObject panelBotonesMultiplayer;
+    [SerializeField] private GameObject panelBotonesMultiplayer;
 
-    public GameObject panelHostWait;           //Muestra el CÓDIGO de sala al Host
-    public TextMeshProUGUI textoIPHost;        
-    public Button botonContinuarHost;          //Aparece tras crear la sala; carga el nivel
+    [SerializeField] private GameObject panelHostWait;
+    [SerializeField] private TextMeshProUGUI textoIPHost;
+    [SerializeField] private Button botonContinuarHost;
 
-    public GameObject panelClientJoin;         //El cliente escribe el código
-    public TMP_InputField inputIPCliente;      
+    [SerializeField] private GameObject panelClientJoin;
+    [SerializeField] private TMP_InputField inputIPCliente;
+    [SerializeField] private Button botonUnirseCliente;
 
     [Header("Estado de Conexión")]
     [Tooltip("Texto opcional para mostrar 'Conectando...' / errores")]
-    public TextMeshProUGUI textoEstadoConexion;
-    public GameObject loadingSpinner; 
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // SCOREBOARD
-    // ─────────────────────────────────────────────────────────────────────────
+    [SerializeField] private TextMeshProUGUI textoEstadoConexion;
+    [SerializeField] private GameObject loadingSpinner;
 
     [Header("Scoreboard")]
-    public GameObject filaPrefab;
-    public Transform contentContenedor;
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // BOTONES
-    // ─────────────────────────────────────────────────────────────────────────
+    [SerializeField] private GameObject filaPrefab;
+    [SerializeField] private Transform contentContenedor;
 
     [Header("Botones del Menú")]
-    public Button nuevaPartidaButton;
-    public Button continuarButton;
-    public Button cooperativoButton;
-    public Button opcionesButton;
-    public Button salirButton;
+    [SerializeField] private Button nuevaPartidaButton;
+    [SerializeField] private Button continuarButton;
+    [SerializeField] private Button cooperativoButton;
+    [SerializeField] private Button opcionesButton;
+    [SerializeField] private Button salirButton;
 
     [Header("Botones de Confirmación")]
-    public Button confirmSiButton;
-    public Button confirmNoButton;
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // ESCENAS
-    // ─────────────────────────────────────────────────────────────────────────
+    [SerializeField] private Button confirmSiButton;
+    [SerializeField] private Button confirmNoButton;
 
     [Header("Escenas")]
-    public int primerNivelIndex = 1;
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // INICIO
-    // ─────────────────────────────────────────────────────────────────────────
+    [SerializeField] private int primerNivelIndex;
 
     void Start()
     {
@@ -81,7 +58,12 @@ public class MainMenuManager : MonoBehaviour
         Cursor.lockState = CursorLockMode.None;
 
         if (SaveSystem.instance == null)
-            Debug.LogError("❌ No hay SaveSystem en la escena.");
+            Debug.LogError("No hay SaveSystem en la escena.");
+
+        //garantizamos que NetworkManager sobreviva el cambio de escena sin importar
+        //la configuración del Inspector (DontDestroy checkbox del componente).
+        if (NetworkManager.Singleton != null)
+            DontDestroyOnLoad(NetworkManager.Singleton.gameObject);
 
         ActualizarBotones();
 
@@ -96,11 +78,62 @@ public class MainMenuManager : MonoBehaviour
         if (loadingSpinner          != null) loadingSpinner.SetActive(false);
 
         LimpiarEstadoConexion();
+
+        //limitar el campo de código: solo alfanumérico, máximo 6 caracteres
+        if (inputIPCliente != null)
+        {
+            inputIPCliente.characterLimit = 6;
+            inputIPCliente.contentType    = TMPro.TMP_InputField.ContentType.Alphanumeric;
+        }
+
+        //el NetworkManager tiene una propiedad "OfflineScene" que recarga la escena
+        //automáticamente cuando el cliente se desconecta. Si queda configurada,
+        //un join fallido (el SDK hace Shutdown internamente) destruye toda la UI.
+        //la vaciamos por código para evitarlo.
+        LimpiarOfflineSceneNetworkManager();
+
+        //si el SDK recargó la escena mientras procesaba un join fallido,
+        //relayManager (DontDestroyOnLoad) habrá guardado el mensaje de error.
+        //lo recuperamos aquí y mostramos el panel de cliente con el error.
+        string pendingError = RelayManager.instance != null ? RelayManager.instance.PendingConnectionError : null;
+        Debug.Log($"[MainMenuManager] Start() — PendingConnectionError: '{pendingError ?? "(null)"}'");
+
+        if (!string.IsNullOrEmpty(pendingError))
+        {
+            RelayManager.instance.PendingConnectionError = null;
+            RestaurarPanelCliente();
+            MostrarEstadoConexion(pendingError);
+            Debug.Log($"[MainMenuManager] Mostrando error de conexión pendiente en panel cliente.");
+        }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // NUEVA PARTIDA (Solitario)
-    // ─────────────────────────────────────────────────────────────────────────
+    private void LimpiarOfflineSceneNetworkManager()
+    {
+        if (NetworkManager.Singleton == null) return;
+        try
+        {
+            //el campo es serializado pero privado; usamos reflexión para vaciarlo.
+            //probamos los nombres conocidos de distintas versiones de NGO.
+            string[] candidatos = { "m_OfflineScene", "OfflineScene", "offlineScene" };
+            foreach (string nombre in candidatos)
+            {
+                var campo = typeof(NetworkManager).GetField(nombre,
+                    System.Reflection.BindingFlags.NonPublic |
+                    System.Reflection.BindingFlags.Public    |
+                    System.Reflection.BindingFlags.Instance);
+                if (campo != null)
+                {
+                    campo.SetValue(NetworkManager.Singleton, string.Empty);
+                    Debug.Log($"[MainMenuManager] OfflineScene limpiado (campo '{nombre}').");
+                    break;
+                }
+            }
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning($"[MainMenuManager] No se pudo limpiar OfflineScene vía reflexión: {e.Message}");
+        }
+    }
 
     public void NuevaPartida()
     {
@@ -140,10 +173,6 @@ public class MainMenuManager : MonoBehaviour
         EjecutarCargaDeNivel(primerNivelIndex);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // CONTINUAR
-    // ─────────────────────────────────────────────────────────────────────────
-
     public void Continuar()
     {
         if (SaveSystem.instance == null) return;
@@ -157,10 +186,6 @@ public class MainMenuManager : MonoBehaviour
         NetworkModeData.modoSeleccionado = NetworkModeData.Mode.Solitario;
         EjecutarCargaDeNivel(data.sceneIndex);
     }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // COOPERATIVO ONLINE 
-    // ─────────────────────────────────────────────────────────────────────────
 
     public void AbrirPanelCooperativo()
     {
@@ -183,6 +208,18 @@ public class MainMenuManager : MonoBehaviour
 
     public void VolverSeleccionCooperativo()
     {
+        //si ya estábamos conectados esperando al host → desconectarse pero quedarse
+        //en panelClientJoin para que el usuario pueda reintentar con otro código
+        if (NetworkModeData.modoSeleccionado == NetworkModeData.Mode.Cliente)
+        {
+            NetworkModeData.modoSeleccionado = NetworkModeData.Mode.Ninguno;
+            _ = RelayManager.instance?.LeaveSession();
+            SetBotonUnirseInteractable(true);
+            LimpiarEstadoConexion();
+            return; //no navegar hacia atrás: el usuario reintenta desde el mismo panel
+        }
+
+        //navegación normal (no conectado): volver a selección Host/Cliente
         if (panelHostWait           != null) panelHostWait.SetActive(false);
         if (panelClientJoin         != null) panelClientJoin.SetActive(false);
         if (panelBotonesMultiplayer != null) panelBotonesMultiplayer.SetActive(true);
@@ -213,9 +250,9 @@ public class MainMenuManager : MonoBehaviour
         }
 
         if (textoIPHost != null)
-            textoIPHost.text = $"Código de sala: {joinCode}";
+            textoIPHost.text = $"Lobby Code: {joinCode}";
 
-        MostrarEstadoConexion("Comparte el código con tu compañero y presiona Continuar.");
+        MostrarEstadoConexion("Share the Lobby Code with your friend and Press Continue as Host.");
 
         if (botonContinuarHost != null) botonContinuarHost.gameObject.SetActive(true);
     }
@@ -231,9 +268,16 @@ public class MainMenuManager : MonoBehaviour
 
     public void ContinuarComoHost()
     {
+        //modo online siempre empieza sin datos de partida guardada
+        if (SaveSystem.instance != null)
+        {
+            SaveSystem.instance.pendingLoad   = null;
+            SaveSystem.instance.isLoadingGame = false;
+        }
+
         NetworkModeData.modoSeleccionado = NetworkModeData.Mode.Host;
-        
-        //El Host es quien controla la carga de escena con Netcode
+
+        //el Host es quien controla la carga de escena con Netcode
         if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsHost)
         {
             EjecutarCargaDeNivelComoHost(primerNivelIndex);
@@ -243,8 +287,6 @@ public class MainMenuManager : MonoBehaviour
             Debug.LogError("[MainMenuManager] ContinuarComoHost() llamado pero NetworkManager no está listo o no somos Host.");
         }
     }
-
-    // ─── Cliente (P2) — se une con el código ────────────────────────────────
 
     public void AbrirPantallaCliente()
     {
@@ -263,33 +305,110 @@ public class MainMenuManager : MonoBehaviour
             return;
         }
 
-        MostrarEstadoConexion("Conectando...");
-        if (loadingSpinner != null) loadingSpinner.SetActive(true);
-
-        bool conectado = await RelayManager.instance.JoinRelayAsClient(codigo);
-
-        if (loadingSpinner != null) loadingSpinner.SetActive(false);
-
-        if (!conectado)
+        //validar formato antes de llamar al SDK (evita llamadas innecesarias)
+        codigo = codigo.ToUpper();
+        if (!System.Text.RegularExpressions.Regex.IsMatch(codigo, @"^[A-Z0-9]{1,6}$"))
         {
-            MostrarEstadoConexion("❌ Código inválido o la sala ya no existe.");
+            MostrarEstadoConexion("⚠️ Código inválido. Solo letras y números, máximo 6 caracteres.");
             return;
         }
 
+        //si ya estábamos conectados esperando al host, desconectarse primero
+        if (NetworkModeData.modoSeleccionado == NetworkModeData.Mode.Cliente)
+        {
+            NetworkModeData.modoSeleccionado = NetworkModeData.Mode.Ninguno;
+            if (RelayManager.instance != null) await RelayManager.instance.LeaveSession();
+            if (this == null) return;
+        }
+
+        SetBotonUnirseInteractable(false);
+        MostrarEstadoConexion("Conectando...");
+        if (loadingSpinner != null) loadingSpinner.SetActive(true);
+
+        bool conectado = false;
+        try
+        {
+            conectado = await RelayManager.instance.JoinRelayAsClient(codigo);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"[MainMenuManager] Excepción al conectar: {e.Message}");
+            conectado = false;
+        }
+
+        //detener spinner siempre, independientemente del resultado
+        if (loadingSpinner != null) loadingSpinner.SetActive(false);
+
+        //guardia: si el SDK recargó la escena mientras esperábamos, este MonoBehaviour
+        //fue destruido. RelayManager.PendingConnectionError persiste y Start() lo mostrará.
+        if (this == null) return;
+
+        if (!conectado)
+        {
+            //limpiar el error pendiente: lo manejamos aquí directamente, sin esperar a Start()
+            if (RelayManager.instance != null) RelayManager.instance.PendingConnectionError = null;
+
+            RestaurarPanelCliente();
+            MostrarEstadoConexion("❌ Código inválido o sala no encontrada.\nVerifica que el P1 ya haya creado la sala y vuelve a intentarlo.");
+            return;
+        }
+
+        //éxito: marcar modo cliente, restaurar botón Connect (el usuario puede
+        //reconectarse si quiere cambiar de código), y mostrar estado de espera.
+        //Cuando el host inicie el nivel, NGO SceneManager cargará la escena automáticamente.
         NetworkModeData.modoSeleccionado = NetworkModeData.Mode.Cliente;
-        
-        //El Cliente NUNCA carga la escena manualmente.
-        //Solo espera a que Netcode sincronice cuando el Host cargue.
-        MostrarEstadoConexion("✓ Conectado. Esperando que el Host cargue el nivel...");
-        
-        // Cerrar paneles del menú y esperar la sincronización automática
-        if (panelNetwork != null) panelNetwork.SetActive(false);
-        if (panelClientJoin != null) panelClientJoin.SetActive(false);
+        MostrarEstadoConexion("✓ Conectado. Esperando que el Host inicie el nivel...");
+        SetBotonUnirseInteractable(true);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // ESTADO DE CONEXIÓN (feedback al usuario)
-    // ─────────────────────────────────────────────────────────────────────────
+    //Restaura el panel de cliente al estado inicial: paneles visibles, botón activo.
+    //Punto único de restauración — se usa tanto en errores de join como en Start() al volver de un crash.
+    private void RestaurarPanelCliente()
+    {
+        Cursor.visible   = true;
+        Cursor.lockState = CursorLockMode.None;
+        Time.timeScale   = 1f;
+
+        if (panelMenuPrincipal      != null) panelMenuPrincipal.SetActive(false);
+        if (panelBotonesMultiplayer != null) panelBotonesMultiplayer.SetActive(false);
+        if (panelNetwork            != null) panelNetwork.SetActive(true);
+        if (panelClientJoin         != null) panelClientJoin.SetActive(true);
+        if (loadingSpinner          != null) loadingSpinner.SetActive(false);
+        SetBotonUnirseInteractable(true);
+    }
+
+    //Muestra u oculta el botón de unirse usando SetActive (más fiable que solo interactable:
+    //algunos Animators de botón dejan el botón visualmente oculto al desactivar interactable
+    //y no lo recuperan al reactivarlo sin un ciclo de SetActive).
+    private void SetBotonUnirseInteractable(bool activo)
+    {
+        if (botonUnirseCliente != null)
+        {
+            botonUnirseCliente.gameObject.SetActive(activo);
+            botonUnirseCliente.interactable = activo;
+            return;
+        }
+        //fallback si el inspector no tiene el campo asignado
+        if (panelClientJoin == null) return;
+        Button[] btns = panelClientJoin.GetComponentsInChildren<Button>(true);
+        //buscar el botón de unirse por nombre
+        foreach (var b in btns)
+        {
+            string n = b.name.ToLower();
+            if (n.Contains("unir") || n.Contains("conectar") || n.Contains("join") || n.Contains("confirm"))
+            {
+                b.gameObject.SetActive(activo);
+                b.interactable = activo;
+                return;
+            }
+        }
+        //si no hay match por nombre, usar el ÚLTIMO botón (normalmente el de acción principal)
+        if (btns.Length > 0)
+        {
+            btns[btns.Length - 1].gameObject.SetActive(activo);
+            btns[btns.Length - 1].interactable = activo;
+        }
+    }
 
     private void MostrarEstadoConexion(string mensaje)
     {
@@ -304,10 +423,6 @@ public class MainMenuManager : MonoBehaviour
         if (textoEstadoConexion != null) textoEstadoConexion.text = "";
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // OPCIONES
-    // ─────────────────────────────────────────────────────────────────────────
-
     public void AbrirOpciones()
     {
         if (panelMenuPrincipal != null) panelMenuPrincipal.SetActive(false);
@@ -319,10 +434,6 @@ public class MainMenuManager : MonoBehaviour
         if (panelOpciones      != null) panelOpciones.CloseOptions();
         if (panelMenuPrincipal != null) panelMenuPrincipal.SetActive(true);
     }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // SCOREBOARD
-    // ─────────────────────────────────────────────────────────────────────────
 
     public void MostrarScoreboard()
     {
@@ -355,10 +466,6 @@ public class MainMenuManager : MonoBehaviour
         if (panelMenuPrincipal != null) panelMenuPrincipal.SetActive(true);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // SALIR
-    // ─────────────────────────────────────────────────────────────────────────
-
     public void Salir()
     {
         Debug.Log("Saliendo del juego...");
@@ -368,10 +475,6 @@ public class MainMenuManager : MonoBehaviour
         UnityEditor.EditorApplication.isPlaying = false;
         #endif
     }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // HELPERS PRIVADOS
-    // ─────────────────────────────────────────────────────────────────────────
 
     private void ActualizarBotones()
     {
@@ -383,8 +486,8 @@ public class MainMenuManager : MonoBehaviour
     {
         if (LoadingScreenManager.Instance != null)
         {
-            // LoadingScreenManager usa SceneManager.LoadSceneAsync internamente
-            // Esto es correcto para solitario, ya que no hay Netcode
+            //loadingScreenManager usa SceneManager.LoadSceneAsync internamente
+            //esto es correcto para solitario, ya que no hay Netcode
             LoadingScreenManager.Instance.LoadScene(indexEscena);
         }
         else

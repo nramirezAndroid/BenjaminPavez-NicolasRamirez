@@ -67,6 +67,6 @@
         "*.sln": "*.csproj",
         "*.slnx": "*.csproj"
     },
-    "dotnet.defaultSolution": "BenjaminPavez-NicolasRamirez.slnx",
+    "dotnet.defaultSolution": "BenjaminPavez-NicolasRamirez-Avance3-development.slnx",
     "dotnet.enableWorkspaceBasedDevelopment": false
 }

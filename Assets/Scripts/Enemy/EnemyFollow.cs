@@ -4,15 +4,14 @@ using Unity.Netcode;
 public class EnemyFollow : EnemyBase 
 {
     [Header("Configuración de Seguimiento")]
-    public Transform player;
-    public float detectionRadius = 7f; 
-    public float stoppingDistance = 0.8f; 
-    public float speed = 3f;
+    [SerializeField] private float detectionRadius;
+    [SerializeField] private float stoppingDistance;
+    [SerializeField] private float speed;
 
     [Header("IA: Detección de Borde")]
-    public float edgeCheckDistance = 0.5f;   
-    public float groundCheckDepth = 1.5f; 
-    public LayerMask groundLayer;            
+    [SerializeField] private float edgeCheckDistance;
+    [SerializeField] private float groundCheckDepth;
+    [SerializeField] private LayerMask groundLayer;
 
     private Vector2 movement;
     private bool EnMovimiento; 
@@ -35,55 +34,59 @@ public class EnemyFollow : EnemyBase
 
     protected override void Start()
     {
-        base.Start(); 
-        
-        //Solo el Servidor se encarga de buscar al jugador para seguirlo
-        if (IsServer && player == null)
-        {
-            GameObject p = GameObject.FindGameObjectWithTag("Player");
-            if (p != null) player = p.transform;
-        }
+        base.Start();
     }
 
     void Update()
     {
-        //Toda la IA e inputs ocurren en el Servidor
+        //⭐ CRÍTICO: Solo el servidor ejecuta IA
         if (!IsServer) return;
 
-        if (isDead || isStunned) 
+        if (isDead || isStunned)
         {
             EnMovimiento = false;
             if (anim != null) anim.SetBool("enMovimiento", false);
             return; 
         }
 
+        //si está poseído por P2, no ejecuta IA
         if (networkIsPossessed.Value)
         {
-            //Sincroniza hacia dónde mira basado en cómo lo mueve el P2
-            if (rb.linearVelocity.x > 0.1f && !networkIsFacingRight.Value) networkIsFacingRight.Value = true;
-            else if (rb.linearVelocity.x < -0.1f && networkIsFacingRight.Value) networkIsFacingRight.Value = false;
+            //sincroniza hacia dónde mira basado en cómo lo mueve el P2
+            if (rb.linearVelocity.x > 0.1f && !networkIsFacingRight.Value) 
+                networkIsFacingRight.Value = true;
+            else if (rb.linearVelocity.x < -0.1f && networkIsFacingRight.Value) 
+                networkIsFacingRight.Value = false;
 
-            //Animación de caminar manual
+            //animación de caminar manual
             if (anim != null) anim.SetBool("enMovimiento", Mathf.Abs(rb.linearVelocity.x) > 0.1f);
             return;
         }
 
-        if (player == null)
+        //⭐ Obtén al jugador de forma segura con GetPlayer1()
+        PlayerController player = GetPlayer1();
+        if (player == null || player.IsDead)
         {
             EnMovimiento = false;
             if (anim != null) anim.SetBool("enMovimiento", false);
             return; 
         }
 
-        float distanceToPlayer = Vector2.Distance(transform.position, player.position);
+        //⭐ Usa GetDistanceToPlayer() en lugar de calcular manualmente
+        float distanceToPlayer = GetDistanceToPlayer();
 
         if (distanceToPlayer < detectionRadius)
         {
-            float directionX = player.position.x - transform.position.x;
-            if (directionX > 0 && !networkIsFacingRight.Value) networkIsFacingRight.Value = true;
-            else if (directionX < 0 && networkIsFacingRight.Value) networkIsFacingRight.Value = false;
+            //⭐ Usa GetDirectionToPlayer() para obtener solo la dirección X
+            Vector3 directionToPlayer = GetDirectionToPlayer();
+            float directionX = directionToPlayer.x;
 
-            //Movimiento solo si hay suelo
+            if (directionX > 0 && !networkIsFacingRight.Value) 
+                networkIsFacingRight.Value = true;
+            else if (directionX < 0 && networkIsFacingRight.Value) 
+                networkIsFacingRight.Value = false;
+
+            //movimiento solo si hay suelo
             if (distanceToPlayer > stoppingDistance)
             {
                 if (CheckGroundAhead(directionX))
@@ -96,19 +99,21 @@ public class EnemyFollow : EnemyBase
                     EnMovimiento = false; 
                 }
             }
-            else EnMovimiento = false;
+            else 
+                EnMovimiento = false;
         }
-        else EnMovimiento = false;
+        else 
+            EnMovimiento = false;
 
         if (anim != null) anim.SetBool("enMovimiento", EnMovimiento);
     }
 
     void FixedUpdate()
     {
-        //La física la sigue calculando exclusivamente el servidor
+        //la física la sigue calculando exclusivamente el servidor
         if (!IsServer) return;
 
-        //Si está poseído, la física de movimiento horizontal la maneja EnemyBase mediante MoveAsPossessed()
+        //si está poseído, la física de movimiento horizontal la maneja EnemyBase mediante MoveAsPossessed()
         if (networkIsPossessed.Value) return;
 
         if (isDead || isStunned) return;
@@ -139,20 +144,18 @@ public class EnemyFollow : EnemyBase
         transform.localScale = localScale;
     }
 
-    private void OnCollisionEnter2D(Collision2D collision)
+    protected override void OnCollisionEnter2D(Collision2D collision)
     {
-        //El daño por contacto solo lo aplica y calcula el Servidor
-        if (!IsServer) return;
+        //base maneja el daño a otros enemigos cuando está poseído
+        base.OnCollisionEnter2D(collision);
 
-        if (isDead || isStunned) return;
+        if (!IsServer || isDead || isStunned) return;
 
-        if (collision.gameObject.CompareTag("Player"))
+        //cuando NO está poseído, daña al jugador por contacto
+        if (!networkIsPossessed.Value && collision.gameObject.CompareTag("Player"))
         {
-            PlayerControllerComplete p = collision.gameObject.GetComponent<PlayerControllerComplete>();
-            if (p != null) 
-            {
-                p.TakeDamage(contactDamage, transform); 
-            }
+            PlayerController p = collision.gameObject.GetComponent<PlayerController>();
+            if (p != null) p.TakeDamage(contactDamage, transform);
         }
     }
 }

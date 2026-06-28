@@ -7,7 +7,7 @@ public class DestroyVFX : MonoBehaviour
 
     void Start()
     {
-        //Se elimina automáticamente del juego tras expirar el tiempo de la animación
+        //se elimina automáticamente del juego tras expirar el tiempo de la animación
         Destroy(gameObject, lifeTime);
     }
 }

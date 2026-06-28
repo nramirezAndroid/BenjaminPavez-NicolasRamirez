@@ -3,17 +3,17 @@ using UnityEngine;
 public class PlayerSoundController : MonoBehaviour
 {
     [Header("Configuración")]
-    public AudioSource audioSource;
+    [SerializeField] private AudioSource audioSource;
 
     [Header("Clips de Sonido")]
-    public AudioClip ataque;
-    public AudioClip recibirDano;
-    public AudioClip salto;
-    public AudioClip dash;
-    public AudioClip poder;
-    public AudioClip muerte;
+    [SerializeField] private AudioClip ataque;
+    [SerializeField] private AudioClip recibirDano;
+    [SerializeField] private AudioClip salto;
+    [SerializeField] private AudioClip dash;
+    [SerializeField] private AudioClip poder;
+    [SerializeField] private AudioClip muerte;
 
-    //Funciones que se llamara desde el PlayerController
+    //funciones que se llamara desde el PlayerController
     public void PlayAtaque() { if(ataque) audioSource.PlayOneShot(ataque); }
     public void PlayRecibirDano() { if(recibirDano) audioSource.PlayOneShot(recibirDano); }
     public void PlaySalto() { if(salto) audioSource.PlayOneShot(salto); }

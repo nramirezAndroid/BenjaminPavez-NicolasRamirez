@@ -4,7 +4,8 @@ using System.Collections.Generic;
 [System.Serializable]
 public class LevelRecord
 {
-    public int   sceneIndex;
+    //campos publicos: LevelRecord es un DTO, no un MonoBehaviour
+    public int sceneIndex;
     public float bestTime;
     public string levelName;
 }
