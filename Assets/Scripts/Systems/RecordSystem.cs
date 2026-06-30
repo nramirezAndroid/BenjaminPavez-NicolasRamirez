@@ -54,8 +54,21 @@ public class RecordSystem : MonoBehaviour
 
     public List<LevelRecord> GetAll() => allRecords.records;
 
-    private void Save() =>
+    // Llama desde Inspector: click derecho en el componente → "Borrar todos los récords"
+    [ContextMenu("Borrar todos los récords")]
+    public void ClearAllRecords()
+    {
+        allRecords = new AllRecords();
+        PlayerPrefs.DeleteKey(PREF_KEY);
+        PlayerPrefs.Save();
+        Debug.Log("[RecordSystem] Todos los récords han sido borrados.");
+    }
+
+    private void Save()
+    {
         PlayerPrefs.SetString(PREF_KEY, JsonUtility.ToJson(allRecords));
+        PlayerPrefs.Save();
+    }
 
     private void Load()
     {

@@ -7,6 +7,7 @@ public class EnemySpawner : MonoBehaviour
     [SerializeField] private GameObject slimesPrefab;
     [SerializeField] private GameObject enemyflyPrefab;
     [SerializeField] private GameObject enemyLongSwordKnightPrefab;
+    [SerializeField] private GameObject bossDemonPrefab;
 
     [Header("Configuración de Spawn")]
     [Tooltip("Posiciones donde spawnear enemigos (configura en Inspector)")]
@@ -119,6 +120,8 @@ public class EnemySpawner : MonoBehaviour
                 return enemyflyPrefab;
             else if (config.GetEnemyType() == SpawnPointConfig.EnemyType.Knight)
                 return enemyLongSwordKnightPrefab;
+            else if (config.GetEnemyType() == SpawnPointConfig.EnemyType.BossDemon)
+                return bossDemonPrefab;
         }
 
         //estrategia 2: Basarse en tags
@@ -130,6 +133,9 @@ public class EnemySpawner : MonoBehaviour
         
         if (spawnPoint.CompareTag("SpawnKnight"))
             return enemyLongSwordKnightPrefab;
+        
+        if (spawnPoint.CompareTag("SpawnBossDemon"))
+            return bossDemonPrefab;
 
         //estrategia 3: Ciclar entre enemigos por defecto
         int index = System.Array.IndexOf(spawnPoints, spawnPoint);
@@ -173,9 +179,11 @@ public class EnemySpawner : MonoBehaviour
             prefab = slimesPrefab;
         else if (typeIndex == 1)
             prefab = enemyflyPrefab;
-        else
+        else if (typeIndex == 2)
             prefab = enemyLongSwordKnightPrefab;
-
+        else
+            prefab = bossDemonPrefab;
+        
         SpawnEnemyAt(prefab, position, Quaternion.identity);
     }
 }

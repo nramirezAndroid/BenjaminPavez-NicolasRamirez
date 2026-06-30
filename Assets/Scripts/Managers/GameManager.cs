@@ -16,6 +16,17 @@ public class GameManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI finalTimeText;
     [SerializeField] private GameObject[] hudElements;
 
+    [Header("Victoria Final")]
+    [Tooltip("TMP del texto de mensaje final (ej: 'Final Text' dentro de LvlComplete)")]
+    [SerializeField] private TextMeshProUGUI finalMessageText;
+    [Tooltip("Mensaje que se muestra al terminar el juego. Deja vacío para no cambiar el texto del canvas.")]
+    [TextArea(2, 4)]
+    [SerializeField] private string mensajeVictoriaFinal;
+    [Tooltip("Música de créditos. Se reproduce al ganar ignorando AudioListener.pause.")]
+    [SerializeField] private AudioClip creditsMusicClip;
+    [Range(0f, 1f)]
+    [SerializeField] private float creditsMusicVolume = 0.8f;
+
     [SerializeField] private OptionsManager panelOpciones;
 
     [Header("Estado del Juego")]
@@ -43,6 +54,11 @@ public class GameManager : MonoBehaviour
     {
         if (instance == null) instance = this;
         else Destroy(gameObject);
+
+        // AudioListener.pause es estático y persiste entre escenas.
+        // Si el nivel anterior llamó WinLevel() y lo puso en true,
+        // hay que resetearlo aquí para que el audio del nuevo nivel funcione.
+        AudioListener.pause = false;
 
         Application.targetFrameRate = targetFPS;
         QualitySettings.vSyncCount  = 0;
@@ -197,6 +213,7 @@ public class GameManager : MonoBehaviour
 
     public void GoToMainMenu()
     {
+        AudioListener.pause = false;
         Time.timeScale   = 1f;
         isPaused         = false;
         gameEnded        = false;
@@ -215,33 +232,65 @@ public class GameManager : MonoBehaviour
         isPaused       = true;
         Time.timeScale = 0f;
 
+        // Pausa todo el audio del nivel (AudioSources ignoran Time.timeScale).
+        // La música de créditos usa ignoreListenerPause=true para seguir sonando.
+        AudioListener.pause = true;
+
         foreach (GameObject hud in hudElements)
             if (hud != null) hud.SetActive(false);
 
         if (LvlComplete != null)
         {
+            // La escena guarda LvlComplete con localScale (0,0,0); lo restauramos.
+            LvlComplete.transform.localScale = Vector3.one;
+
+            // Corregir RectTransform: la escena puede tener anchoredPosition y sizeDelta
+            // incorrectos (ej: -984,-526 / -1969,-1052) que descentran el panel.
+            // Con anchors (0,0)→(1,1) los valores correctos son (0,0) en ambos campos.
+            RectTransform rt = LvlComplete.GetComponent<RectTransform>();
+            if (rt != null)
+            {
+                rt.anchorMin        = Vector2.zero;
+                rt.anchorMax        = Vector2.one;
+                rt.anchoredPosition = Vector2.zero;
+                rt.sizeDelta        = Vector2.zero;
+            }
+
             LvlComplete.SetActive(true);
             LvlComplete.transform.SetAsLastSibling();
         }
 
-        //como usamos elapsedTime, el finalTimeText se actualizará con los segundos sumados/restados correctamente
         if (finalTimeText != null)
             finalTimeText.text = "Tiempo: " + GetTimeString();
+
+        // Sobreescribir el texto de victoria si está configurado
+        if (finalMessageText != null && !string.IsNullOrEmpty(mensajeVictoriaFinal))
+            finalMessageText.text = mensajeVictoriaFinal;
+
+        // Reproducir música de créditos (ignora AudioListener.pause)
+        if (creditsMusicClip != null)
+        {
+            AudioSource creditsSource = gameObject.AddComponent<AudioSource>();
+            creditsSource.clip                = creditsMusicClip;
+            creditsSource.volume              = creditsMusicVolume;
+            creditsSource.loop                = false;
+            creditsSource.ignoreListenerPause = true;
+            creditsSource.Play();
+        }
 
         SaveSystem.instance?.DeleteSave();
 
         Cursor.visible   = true;
         Cursor.lockState = CursorLockMode.None;
 
-        //guarda el récord
-    if (RecordSystem.instance != null)
-    {
-        int scene = SceneManager.GetActiveScene().buildIndex;
-        string name = SceneManager.GetActiveScene().name;
-        bool isRecord = RecordSystem.instance.TrySetRecord(scene, name, elapsedTime);
-        if (isRecord) Debug.Log("¡Nuevo récord! " + GetTimeString());
-    }
-
+        // guarda el récord
+        if (RecordSystem.instance != null)
+        {
+            int scene     = SceneManager.GetActiveScene().buildIndex;
+            string name   = SceneManager.GetActiveScene().name;
+            bool isRecord = RecordSystem.instance.TrySetRecord(scene, name, elapsedTime);
+            if (isRecord) Debug.Log("¡Nuevo récord! " + GetTimeString());
+        }
     }
 
     public string GetTimeString()
@@ -261,6 +310,7 @@ public class GameManager : MonoBehaviour
             return;
         }
 
+        AudioListener.pause = false;
         Time.timeScale = 1f;
         isPaused       = false;
         gameEnded      = false;

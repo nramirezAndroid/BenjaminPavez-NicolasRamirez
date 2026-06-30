@@ -76,9 +76,13 @@ public class SaveSystem : MonoBehaviour
         return data;
     }
 
-    //borra la partida guardada
+    //borra la partida guardada (en disco Y en memoria).
+    //Limpiar pendingLoad es crítico: si no se limpia, al entrar al siguiente nivel
+    //PlayerController reutiliza las coordenadas guardadas del nivel anterior
+    //y el jugador aparece en la posición incorrecta.
     public void DeleteSave()
     {
+        pendingLoad = null;
         if (File.Exists(SavePath))
         {
             File.Delete(SavePath);

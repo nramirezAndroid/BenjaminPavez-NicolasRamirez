@@ -79,9 +79,16 @@ public class CoopNetworkManager : MonoBehaviour
                 if (kv.Key != NetworkManager.ServerClientId)
                     p2YaConectado = true;
 
-            if (!p2YaConectado)
+            // Durante transiciones entre escenas (Level1→Level2, etc.), P2 ya estaba
+            // conectado en el nivel anterior. NGO tarda unos frames en re-registrar a P2
+            // en ConnectedClients después del cambio de escena, por lo que p2YaConectado
+            // puede ser false momentáneamente aunque P2 siga conectado.
+            // Congelar el juego en ese caso deja al HOST sin responder los heartbeats de
+            // NGO → NGO desconecta a P2 por timeout. La solución: durante transiciones,
+            // nunca mostrar el panel de espera ni congelar timeScale.
+            if (!p2YaConectado && !EstaTransicionandoEscena)
             {
-                //primera carga: mostrar panel y congelar tiempo mientras P2 se conecta.
+                //primera carga desde el menú: mostrar panel y congelar tiempo mientras P2 se une.
                 if (panelEsperandoJugador != null) panelEsperandoJugador.SetActive(true);
                 Time.timeScale = 0f;
             }
@@ -102,6 +109,12 @@ public class CoopNetworkManager : MonoBehaviour
                 Debug.LogError("[CoopNetworkManager] El Cliente no está conectado. " +
                     "¿Se llamó a RelayManager.JoinRelayAsClient() antes de cargar esta escena?");
             }
+
+            // Resetear EstaTransicionandoEscena en el CLIENTE después de que la escena cargó.
+            // CargarSiguienteNivelClientRpc pone el flag en true antes de cargar; si no se
+            // resetea, HandleClientDisconnect ignora TODOS los eventos futuros → el CLIENT
+            // nunca detecta una desconexión legítima del servidor.
+            StartCoroutine(ResetTransicionClienteAfterDelay());
         }
     }
 
@@ -163,6 +176,16 @@ public class CoopNetworkManager : MonoBehaviour
             if (kv.Key != NetworkManager.ServerClientId)
                 SpawnPlayerForClient(kv.Key);
         }
+    }
+
+    //coroutine cliente — resetea EstaTransicionandoEscena después de que la nueva escena cargó
+    private IEnumerator ResetTransicionClienteAfterDelay()
+    {
+        //esperamos el mismo tiempo que el HOST tarda en empezar a spawnear (1.5 s),
+        //más un margen extra. Así el flag cubre todo el período de carga+spawn.
+        yield return new WaitForSecondsRealtime(2.5f);
+        EstaTransicionandoEscena = false;
+        Debug.Log("[CoopNetworkManager] CLIENTE: EstaTransicionandoEscena reseteado tras transición.");
     }
 
     //coroutine de inicio solitario — espera a que Shutdown termine antes de StartHost

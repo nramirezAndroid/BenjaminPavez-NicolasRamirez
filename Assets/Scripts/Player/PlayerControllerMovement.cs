@@ -173,23 +173,16 @@ public partial class PlayerController
 
     private void DetermineWallSlideState()
     {
-        //detección primaria: wallCheck con wallLayer asignado en inspector
-        bool touchingByLayer = wallCheck != null &&
+        // Solo detección por capa: wallCheck debe superponerse con wallLayer.
+        // Esto garantiza que superficies en otras capas (ej: Suelo/limitMap)
+        // nunca activen el wall-slide, aunque bloqueen físicamente al jugador.
+        isTouchingWall = wallCheck != null &&
             Physics2D.OverlapCircle(wallCheck.position, checkRadius, wallLayer);
-
-        //detección fallback: si el jugador está en el aire empujando horizontalmente
-        //pero su velocidad X está bloqueada (≈ 0), hay una pared bloqueándolo.
-        //esto funciona incluso si wallCheck o wallLayer no están bien configurados.
-        bool touchingByBlockedVelocity = !isGrounded
-            && Mathf.Abs(horizontalInput) > 0.1f
-            && Mathf.Abs(rb.linearVelocity.x) < walkSpeed * 0.25f;
-
-        isTouchingWall = touchingByLayer || touchingByBlockedVelocity;
 
         bool canSlide = isTouchingWall && !isGrounded && Mathf.Abs(horizontalInput) > 0.1f;
 
-        //si la detección fue por capa, verificamos la dirección también
-        if (canSlide && touchingByLayer)
+        // Verificar que el jugador esté empujando hacia la pared detectada
+        if (canSlide)
         {
             float dirToWall = isFacingRight ? 1f : -1f;
             canSlide = Mathf.Sign(horizontalInput) == dirToWall;

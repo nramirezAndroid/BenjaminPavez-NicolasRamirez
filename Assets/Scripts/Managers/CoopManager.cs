@@ -3,7 +3,12 @@ using UnityEngine.SceneManagement;
 using TMPro;
 using Unity.Netcode;
 
-public class CoopManager : NetworkBehaviour
+// CoopManager es MonoBehaviour (no NetworkBehaviour) porque usa DontDestroyOnLoad en Awake,
+// lo que lo saca de la escena antes de que NGO pueda spawnearlo. Como NetworkBehaviour no
+// spawneado, sus [ClientRpc] y NetworkVariable nunca funcionan y NGO emite el warning
+// "You may not pass in objects that are already persistent". Como MonoBehaviour, la
+// comunicación con el CLIENTE se hace a través de PlayerController (que sí está spawneado).
+public class CoopManager : MonoBehaviour
 {
     public static CoopManager instance;
 
@@ -17,11 +22,9 @@ public class CoopManager : NetworkBehaviour
     [SerializeField] private TextMeshProUGUI resultsText;
     public GameObject p2HUD;              //panel con controles de P2 (buffos, trampas)
 
-    public NetworkVariable<bool> p1Connected = new NetworkVariable<bool>(false,
-        NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
-
-    public NetworkVariable<bool> p2Connected = new NetworkVariable<bool>(false,
-        NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    // Estado de conexión local (no sincronizado por red; el HOST lo gestiona)
+    private bool p1Connected = false;
+    private bool p2Connected = false;
 
     void Awake()
     {
@@ -32,22 +35,25 @@ public class CoopManager : NetworkBehaviour
         }
         else
         {
+            // Transferir referencias de UI de la nueva escena al singleton existente.
+            // El singleton persiste entre escenas (DontDestroyOnLoad), pero sus campos
+            // [SerializeField] apuntan a objetos de la escena anterior (ya destruidos).
+            // Al entrar a una nueva escena se instancia un nuevo CoopManager con las
+            // referencias correctas; las copiamos aquí antes de destruirlo para que
+            // MostrarVictoriaLocal/MostrarDerrotaLocal funcionen en la escena actual.
+            if (resultsPanel != null) instance.resultsPanel = this.resultsPanel;
+            if (resultsText  != null) instance.resultsText  = this.resultsText;
+            if (modeText     != null) instance.modeText     = this.modeText;
+            if (statusText   != null) instance.statusText   = this.statusText;
+            if (p2HUD        != null) instance.p2HUD        = this.p2HUD;
+
             Destroy(gameObject);
+            return;
         }
     }
 
-    private bool yaSubscrito = false;
-
-    public override void OnNetworkSpawn()
+    void Start()
     {
-        //evitar suscripciones duplicadas si OnNetworkSpawn se llama más de una vez
-        if (!yaSubscrito)
-        {
-            p1Connected.OnValueChanged += (_, __) => RefreshStatusUI();
-            p2Connected.OnValueChanged += (_, __) => RefreshStatusUI();
-            yaSubscrito = true;
-        }
-
         if (modeText != null)
             modeText.text = "Modo Cooperativo";
 
@@ -59,23 +65,24 @@ public class CoopManager : NetworkBehaviour
 
     public void RegisterPlayer1()
     {
-        if (!IsServer) return;
-        p1Connected.Value = true;
+        bool esServidor = NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer;
+        if (!esServidor) return;
+        p1Connected = true;
+        RefreshStatusUI();
     }
 
     public void RegisterPlayer2()
     {
-        if (!IsServer) return;
-        p2Connected.Value = true;
+        bool esServidor = NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer;
+        if (!esServidor) return;
+        p2Connected = true;
+        RefreshStatusUI();
     }
 
     public void OnGoalReached(float completionTime, bool esVictoriaFinal, string nombreSiguienteNivel = null)
     {
-        //IMPORTANTE: NetworkBehaviour.IsServer devuelve false cuando el NetworkObject no está
-        //spawneado (CoopManager llama DontDestroyOnLoad en Awake, por lo que NGO nunca lo
-        //auto-spawnea). Usamos NetworkManager.Singleton.IsServer directamente.
         bool esServidor = NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer;
-        Debug.Log($"[CoopManager] OnGoalReached — esServidor={esServidor}, IsSpawned={IsSpawned}, " +
+        Debug.Log($"[CoopManager] OnGoalReached — esServidor={esServidor}, " +
                   $"esVictoriaFinal={esVictoriaFinal}, nivel='{nombreSiguienteNivel}'");
 
         if (!esServidor) return;
@@ -103,9 +110,6 @@ public class CoopManager : NetworkBehaviour
             CoopNetworkManager.EstaTransicionandoEscena = true;
             Time.timeScale = 1f;
 
-            //Usamos NGO SceneManager para la transición: esto sincroniza el cambio de escena
-            //en TODAS las máquinas (HOST + clientes) y espera a que todos carguen antes de
-            //spawnar objetos. Así se evitan los deferred spawn timeouts en P2.
             StartCoroutine(CargarEscenaHost(nombreSiguienteNivel));
         }
     }
@@ -115,38 +119,35 @@ public class CoopManager : NetworkBehaviour
         //espera 1 frame para que los mensajes en vuelo salgan por la red.
         yield return null;
 
-        //Intentar con NGO SceneManager: sincroniza el contexto de escena en el CLIENT ANTES de
-        //enviar spawn messages, evitando "Deferred OnSpawn: NetworkObject not found" para P1.
-        bool usoNGO = false;
-        try
-        {
-            var status = NetworkManager.Singleton.SceneManager.LoadScene(
-                nombreSiguienteNivel,
-                UnityEngine.SceneManagement.LoadSceneMode.Single);
-            usoNGO = (status == Unity.Netcode.SceneEventProgressStatus.Started);
-            if (!usoNGO)
-                Debug.LogWarning($"[CoopManager] NGO SceneManager status={status} → usando fallback.");
-            else
-                Debug.Log($"[CoopManager] HOST: NGO SceneManager cargando '{nombreSiguienteNivel}'.");
-        }
-        catch (System.Exception e)
-        {
-            Debug.LogWarning($"[CoopManager] NGO SceneManager excepción: {e.Message} → usando fallback.");
-        }
-
-        if (usoNGO) yield break; //NGO gestiona la carga en CLIENT también → terminamos aquí
-
-        //--- FALLBACK: raw SceneManager ---
-        //Notificar al CLIENT vía ClientRpc para que cargue la escena y active la bandera
-        //EstaTransicionandoEscena antes de que los mensajes de spawn lleguen.
         PlayerController p1 = PlayerTargetFinder.GetPlayer1();
+
+        // PASO 1: notificar al CLIENTE que estamos en transición ANTES de cargar la escena.
+        // Esto pone EstaTransicionandoEscena=true en P2, evitando que HandleClientDisconnect
+        // lo mande al menú cuando NGO despawnea los objetos del nivel actual.
+        if (p1 != null && p1.IsSpawned)
+            p1.NotificarTransicionClientRpc();
+        else
+            Debug.LogWarning("[CoopManager] NotificarTransicion: P1 no disponible.");
+
+        yield return null; //1 frame para que NotificarTransicion salga por la red
+
+        // PASO 2: ordenar al CLIENTE que cargue la siguiente escena de forma directa.
+        // No usamos NGO SceneManager porque la sincronización NGO puede no estar disponible
+        // (RequireAuthenticatedPackets, Relay disconnect, etc.) o llegar antes que
+        // NotificarTransicion, provocando que HandleClientDisconnect expulse a P2.
+        // CargarSiguienteNivelClientRpc también refuerza EstaTransicionandoEscena=true en P2.
         if (p1 != null && p1.IsSpawned)
             p1.CargarSiguienteNivelClientRpc(nombreSiguienteNivel);
         else
-            Debug.LogWarning("[CoopManager] Fallback: P1 no disponible para notificar al CLIENT.");
+            Debug.LogWarning("[CoopManager] CargarSiguienteNivel: P1 no disponible para notificar al CLIENT.");
 
-        yield return null; //1 frame extra para que el ClientRpc salga por la red
-        Debug.Log($"[CoopManager] HOST: fallback raw SceneManager cargando '{nombreSiguienteNivel}'.");
+        yield return null; //1 frame para que el RPC salga por la red antes de que el HOST cambie de escena
+
+        // PASO 3: el HOST carga la siguiente escena.
+        // SpawnJugadoresParaTransicion() espera 1.5 s (tiempo real) antes de spawnear,
+        // dando al CLIENTE tiempo suficiente para terminar de cargar la nueva escena
+        // y recibir los spawn messages sin timeouts.
+        Debug.Log($"[CoopManager] HOST: cargando '{nombreSiguienteNivel}'.");
         SceneManager.LoadScene(nombreSiguienteNivel);
     }
 
@@ -154,31 +155,49 @@ public class CoopManager : NetworkBehaviour
     //No usa ClientRpc porque CoopManager no está spawneado como NetworkObject.
     public void MostrarVictoriaLocal(float completionTime)
     {
-        if (resultsPanel != null) resultsPanel.SetActive(true);
+        if (resultsPanel != null)
+        {
+            // Panel dedicado de CoopManager asignado en el Inspector → usarlo.
+            resultsPanel.SetActive(true);
 
-        int minutes = Mathf.FloorToInt(completionTime / 60f);
-        int seconds = Mathf.FloorToInt(completionTime % 60f);
-        string timeStr = $"{minutes:00}:{seconds:00}";
+            int minutes = Mathf.FloorToInt(completionTime / 60f);
+            int seconds = Mathf.FloorToInt(completionTime % 60f);
+            string timeStr = $"{minutes:00}:{seconds:00}";
 
-        if (resultsText != null)
-            resultsText.text = $"¡Gracias por jugar!\nTiempo: {timeStr}\n¡Bien hecho, equipo!";
-    }
-
-    [ClientRpc]
-    private void ShowVictoryClientRpc(float completionTime)
-    {
-        //Mantenido por compatibilidad; en cooperativo se usa MostrarVictoriaLocal vía PlayerController.
-        MostrarVictoriaLocal(completionTime);
+            if (resultsText != null)
+                resultsText.text = $"¡Gracias por jugar!\nTiempo: {timeStr}\n¡Bien hecho, equipo!";
+        }
+        else if (GameManager.instance != null)
+        {
+            // Fallback: el panel dedicado no está asignado (campo null en el prefab).
+            // Reutilizamos el LvlComplete del GameManager, que ya está asignado en Level 3.
+            // WinLevel() activa el panel, pausa el audio y pone Time.timeScale = 0.
+            GameManager.instance.WinLevel();
+        }
+        else
+        {
+            Debug.LogWarning("[CoopManager] MostrarVictoriaLocal: ni resultsPanel ni GameManager disponibles.");
+        }
     }
 
     public void OnPlayer1Died()
     {
-        if (!IsServer) return;
-        ShowDefeatClientRpc();
+        bool esServidor = NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer;
+        if (!esServidor) return;
+
+        // Mostrar derrota en el HOST directamente
+        MostrarDerrotaLocal();
+
+        // Notificar al CLIENTE a través de PlayerController (que sí está spawneado)
+        PlayerController p1 = PlayerTargetFinder.GetPlayer1();
+        if (p1 != null && p1.IsSpawned)
+            p1.MostrarDerrotaClientRpc();
+        else
+            Debug.LogWarning("[CoopManager] MostrarDerrotaClientRpc no enviado: P1 no disponible.");
     }
 
-    [ClientRpc]
-    private void ShowDefeatClientRpc()
+    // Llamado localmente en HOST y vía PlayerController.MostrarDerrotaClientRpc en CLIENTE.
+    public void MostrarDerrotaLocal()
     {
         if (resultsPanel != null) resultsPanel.SetActive(true);
         if (resultsText  != null)
@@ -201,9 +220,7 @@ public class CoopManager : NetworkBehaviour
     private void RefreshStatusUI()
     {
         if (statusText == null) return;
-
-        bool allConnected = p1Connected.Value && p2Connected.Value;
-        statusText.text = allConnected
+        statusText.text = (p1Connected && p2Connected)
             ? "✓ Ambos jugadores conectados"
             : "Esperando jugadores...";
     }

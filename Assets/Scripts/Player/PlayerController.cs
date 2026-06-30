@@ -311,6 +311,30 @@ public partial class PlayerController : NetworkBehaviour
         UnityEngine.SceneManagement.SceneManager.LoadScene(nombreSiguienteNivel);
     }
 
+    // Notifica al CLIENTE que una transición de escena está comenzando, SIN cargar la escena.
+    // Se llama ANTES de que el HOST use NGO SceneManager, para que EstaTransicionandoEscena = true
+    // en el CLIENTE cuando NGO emita eventos de disconnect durante el cambio de escena.
+    // Sin este RPC, el handler HandleClientDisconnect del CLIENTE ve el flag en false
+    // y llama Boton_SalirYDesconectar() → P2 abandona la sesión involuntariamente.
+    [ClientRpc]
+    public void NotificarTransicionClientRpc()
+    {
+        if (IsServer) return;
+        CoopNetworkManager.EstaTransicionandoEscena = true;
+        Time.timeScale = 1f;
+        Debug.Log("[PlayerController] CLIENTE: transición de escena iniciada — EstaTransicionandoEscena=true");
+    }
+
+    // Muestra la pantalla de derrota en el CLIENTE.
+    // CoopManager no está spawneado → sus [ClientRpc] no llegan; este sí.
+    [ClientRpc]
+    public void MostrarDerrotaClientRpc()
+    {
+        if (IsServer) return;
+        if (CoopManager.instance != null)
+            CoopManager.instance.MostrarDerrotaLocal();
+    }
+
     [ServerRpc]
     private void RequestTakeDamageServerRpc(int damage) => TakeDamage(damage);
 

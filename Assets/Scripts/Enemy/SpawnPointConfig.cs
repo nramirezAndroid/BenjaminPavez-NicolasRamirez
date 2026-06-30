@@ -6,7 +6,8 @@ public class SpawnPointConfig : MonoBehaviour
     {
         Slimes,
         Enemyfly,
-        Knight
+        Knight,
+        BossDemon
     }
 
     [Header("Tipo de Enemigo a Spawnear")]

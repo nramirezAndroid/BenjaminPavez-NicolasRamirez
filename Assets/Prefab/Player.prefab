@@ -418,7 +418,6 @@ MonoBehaviour:
   soundCtrl: {fileID: 7517183481985189476}
   animator: {fileID: 8909545689555613632}
   maxHealth: 100
-  voidYThreshold: -80
   networkHealth:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0
@@ -430,7 +429,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 256
   attackDamage: 40
-  attackCooldown: 0.5
+  attackCooldown: 0.8
   knockbackForceX: 8
   knockbackForceY: 5
   knockbackDuration: 0.2
@@ -444,8 +443,6 @@ MonoBehaviour:
   jumpHoldForce: 25
   jumpHoldMaxTime: 0.2
   jumpCutMultiplier: 0.4
-  crouchSpeedMultiplier: 0.5
-  crouchHeightMultiplier: 0.55
   wallSlideSpeed: 2
   wallJumpForce: {x: 10, y: 15}
   wallJumpDuration: 0.2

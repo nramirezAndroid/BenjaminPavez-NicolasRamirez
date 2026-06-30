@@ -137,7 +137,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 239661374
+  GlobalObjectIdHash: 3331395651
   InScenePlacedSourceGlobalObjectIdHash: 1945280752
   DeferredDespawnTick: 0
   Ownership: 1
@@ -163,13 +163,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyFlyingShooter
   ShowTopMostFoldoutHeaderGroup: 1
-  maxHealth: 100
+  maxHealth: 40
   deathDelay: 1.5
   contactDamage: 10
   knockbackForce: 7
   stunDuration: 0.3
   reduccionDeTiempo: 20
-  isDead: 0
   networkHealth:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0

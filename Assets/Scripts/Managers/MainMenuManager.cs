@@ -510,8 +510,20 @@ public class MainMenuManager : MonoBehaviour
             return;
         }
 
-        Debug.Log($"[MainMenuManager] Host cargando escena {sceneIndex} con NetworkManager.SceneManager...");
+        // Obtener el nombre exacto de la escena desde su build index.
+        // NGO.SceneManager.LoadScene requiere el nombre, no el índice.
+        string scenePath = UnityEngine.SceneManagement.SceneUtility.GetScenePathByBuildIndex(sceneIndex);
+        string sceneName = System.IO.Path.GetFileNameWithoutExtension(scenePath);
 
-        NetworkManager.Singleton.SceneManager.LoadScene("Nivel1", LoadSceneMode.Single);
+        if (string.IsNullOrEmpty(sceneName))
+        {
+            Debug.LogError($"[MainMenuManager] No se encontró escena con buildIndex {sceneIndex}. " +
+                           "Verifica que esté agregada en File → Build Settings.");
+            return;
+        }
+
+        Debug.Log($"[MainMenuManager] Host cargando escena '{sceneName}' (index {sceneIndex}) con NetworkManager.SceneManager...");
+
+        NetworkManager.Singleton.SceneManager.LoadScene(sceneName, LoadSceneMode.Single);
     }
 }
