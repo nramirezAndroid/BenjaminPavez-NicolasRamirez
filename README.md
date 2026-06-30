@@ -6,8 +6,7 @@
 ![Unity](https://img.shields.io/badge/Unity-6000.4.0f1-black?logo=unity)
 ![Netcode](https://img.shields.io/badge/Netcode_for_GameObjects-NGO-blue)
 ![Relay](https://img.shields.io/badge/Unity_Relay-UGS-orange)
-![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Mac%20%7C%20Linux-lightgrey)
-
+![Platform](https://img.shields.io/badge/Platform-Windows-blue)
 ---
 
 ## 📖 Overview
