@@ -16,6 +16,24 @@ public class EnemyBase : NetworkBehaviour
     [Header("Recompensa de Tiempo")]
     [SerializeField] private float reduccionDeTiempo;
 
+    [Header("Patrullaje")]
+    [Tooltip("Distancia en unidades que el enemigo se aleja a cada lado de su posición de spawn. " +
+             "0 = sin patrullaje, se queda quieto.")]
+    [SerializeField] private float patrolDistance = 5f;
+    [Tooltip("Velocidad de desplazamiento al patrullar.")]
+    [SerializeField] protected float patrolSpeed = 2f;
+    [Tooltip("Segundos que espera al llegar a cada extremo antes de volver.")]
+    [SerializeField] private float patrolWaitTime = 1f;
+
+    //estado de patrullaje accesible por subclases
+    private Vector3 spawnPosition;
+    private float   patrolDir       = 1f;   // 1 = derecha, -1 = izquierda
+    private float   patrolWaitTimer = 0f;
+    private bool    isWaitingAtEdge = false;
+    protected bool  isChasing       = false;
+    protected bool  isPatrolMoving  = false;
+    protected float patrolMoveDir   = 0f;
+
     protected Animator anim;
     protected Rigidbody2D rb;
     protected SpriteRenderer spriteRenderer;
@@ -97,9 +115,85 @@ public class EnemyBase : NetworkBehaviour
 
         if (spriteRenderer != null)
             originalColor = spriteRenderer.color;
+
+        //guardar posición de spawn como centro del patrullaje
+        spawnPosition = transform.position;
     }
 
     protected virtual void Update() { }
+
+    // ─── Sistema de Patrullaje ────────────────────────────────────────────────
+
+    // Patrullaje autónomo basado en distancia desde la posición de spawn.
+    // El enemigo camina patrolDistance unidades a cada lado y rebota sin necesitar
+    // puntos manuales — ideal para enemigos instanciados por EnemySpawner.
+    // Actualiza patrolMoveDir e isPatrolMoving; la subclase aplica la velocidad
+    // en su FixedUpdate con: rb.linearVelocity.x = patrolMoveDir * patrolSpeed
+    protected void HandlePatrol()
+    {
+        if (patrolDistance <= 0f)
+        {
+            isPatrolMoving = false;
+            patrolMoveDir  = 0f;
+            if (anim != null) anim.SetBool("enMovimiento", false);
+            return;
+        }
+
+        //espera en el extremo antes de invertir dirección
+        if (isWaitingAtEdge)
+        {
+            isPatrolMoving  = false;
+            patrolMoveDir   = 0f;
+            patrolWaitTimer -= Time.deltaTime;
+            if (anim != null) anim.SetBool("enMovimiento", false);
+            if (patrolWaitTimer <= 0f) isWaitingAtEdge = false;
+            return;
+        }
+
+        float leftBound  = spawnPosition.x - patrolDistance;
+        float rightBound = spawnPosition.x + patrolDistance;
+
+        //¿llegó al extremo?
+        bool reachedRight = patrolDir > 0 && transform.position.x >= rightBound;
+        bool reachedLeft  = patrolDir < 0 && transform.position.x <= leftBound;
+
+        if (reachedRight || reachedLeft)
+        {
+            patrolDir      *= -1f;   //invertir dirección
+            isWaitingAtEdge = true;
+            patrolWaitTimer = patrolWaitTime;
+            isPatrolMoving  = false;
+            patrolMoveDir   = 0f;
+            if (anim != null) anim.SetBool("enMovimiento", false);
+            return;
+        }
+
+        //¿hay suelo adelante?
+        if (CheckPatrolGroundAhead(patrolDir))
+        {
+            SetFacing(patrolDir > 0);
+            patrolMoveDir  = patrolDir;
+            isPatrolMoving = true;
+            if (anim != null) anim.SetBool("enMovimiento", true);
+        }
+        else
+        {
+            //borde de plataforma: invertir antes de caer
+            patrolDir      *= -1f;
+            isWaitingAtEdge = true;
+            patrolWaitTimer = patrolWaitTime;
+            isPatrolMoving  = false;
+            patrolMoveDir   = 0f;
+            if (anim != null) anim.SetBool("enMovimiento", false);
+        }
+    }
+
+    // Subclases sobreescriben para actualizar su NetworkVariable de dirección o hacer Flip().
+    protected virtual void SetFacing(bool facingRight) { }
+
+    // Subclases con detección de bordes sobreescriben este método.
+    // Por defecto devuelve true (sin comprobación — correcto para enemigos voladores).
+    protected virtual bool CheckPatrolGroundAhead(float dirX) => true;
 
     public virtual void TakeDamage(int damage, Transform damageSource)
     {
@@ -144,9 +238,7 @@ public class EnemyBase : NetworkBehaviour
 
         if (networkIsPossessed.Value) networkIsPossessed.Value = false;
 
-        if (GameManager.instance != null)
-            GameManager.instance.ModificarTiempo(-reduccionDeTiempo);
-
+        //ModificarTiempo se aplica en OnDieLocal() para que corra en TODOS los clientes.
         DieEffectsClientRpc();
     }
 
@@ -207,6 +299,11 @@ public class EnemyBase : NetworkBehaviour
     {
         isDead = true;
         if (anim != null) anim.SetTrigger("Die");
+
+        //Actualizar el timer en TODAS las máquinas: cada cliente tiene su propio
+        //GameManager y debe reflejar la reducción de tiempo localmente.
+        if (GameManager.instance != null)
+            GameManager.instance.ModificarTiempo(-reduccionDeTiempo);
 
         Collider2D col = GetComponent<Collider2D>();
         if (col != null) col.enabled = false;

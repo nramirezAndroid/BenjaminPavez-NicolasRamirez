@@ -29,6 +29,7 @@ public class Player2Controller : NetworkBehaviour
     [SerializeField] private TextMeshProUGUI cdSpeedText;
     [SerializeField] private TextMeshProUGUI cdDamageText;
     [SerializeField] private TextMeshProUGUI cdHealText;
+    [SerializeField] private TextMeshProUGUI cdPossessionText;
 
     [Header("Cooldown de Posesión")]
     [Tooltip("Segundos de espera después de soltar/perder una posesión antes de poder poseer de nuevo")]
@@ -99,8 +100,42 @@ public class Player2Controller : NetworkBehaviour
         {
             isP2Active = true;
             cam = Camera.main;
+            BuscarHUDP2EnEscena();
             StartCoroutine(SetupCameraNextFrame());
         }
+    }
+
+    private void BuscarHUDP2EnEscena()
+    {
+        if (cdSpeedText == null)
+        {
+            GameObject obj = GameObject.Find("Speed Text");
+            if (obj != null) cdSpeedText = obj.GetComponent<TextMeshProUGUI>();
+            if (cdSpeedText == null) Debug.LogWarning("[Player2Controller] No se encontró 'Speed Text' en la escena.");
+        }
+        if (cdDamageText == null)
+        {
+            GameObject obj = GameObject.Find("Damage Text");
+            if (obj != null) cdDamageText = obj.GetComponent<TextMeshProUGUI>();
+            if (cdDamageText == null) Debug.LogWarning("[Player2Controller] No se encontró 'Damage Text' en la escena.");
+        }
+        if (cdHealText == null)
+        {
+            GameObject obj = GameObject.Find("Heal Text");
+            if (obj != null) cdHealText = obj.GetComponent<TextMeshProUGUI>();
+            if (cdHealText == null) Debug.LogWarning("[Player2Controller] No se encontró 'Heal Text' en la escena.");
+        }
+
+        if (cdPossessionText == null)
+        {
+            GameObject obj = GameObject.Find("Possession Text");
+            if (obj != null) cdPossessionText = obj.GetComponent<TextMeshProUGUI>();
+            if (cdPossessionText == null) Debug.LogWarning("[Player2Controller] No se encontró 'Possession Text' en la escena.");
+        }
+
+        //P2 no tiene dash: ocultar el ícono del cooldown de dash de P1
+        GameObject dashIcon = GameObject.Find("Dashlcon") ?? GameObject.Find("DashIcon");
+        if (dashIcon != null) dashIcon.SetActive(false);
     }
 
     System.Collections.IEnumerator SetupCameraNextFrame()
@@ -392,11 +427,15 @@ public class Player2Controller : NetworkBehaviour
     void UpdateCooldownUI()
     {
         if (cdSpeedText  != null)
-            cdSpeedText.text  = cooldownSpeed  > 0f ? $"Q ({cooldownSpeed:F0}s)"  : "Q listo";
+            cdSpeedText.text  = cooldownSpeed  > 0f ? $"Speed Q ({cooldownSpeed:F0}s)"  : "Speed Q ready";
         if (cdDamageText != null)
-            cdDamageText.text = cooldownDamage > 0f ? $"E ({cooldownDamage:F0}s)" : "E listo";
-        if (cdHealText   != null)
-            cdHealText.text   = cooldownHeal   > 0f ? $"R ({cooldownHeal:F0}s)"   : "R listo";
+            cdDamageText.text = cooldownDamage > 0f ? $"Damage E ({cooldownDamage:F0}s)" : "Damage E ready";
+        if (cdHealText != null)
+            cdHealText.text   = cooldownHeal   > 0f ? $"Healing R ({cooldownHeal:F0}s)"  : "Healing R ready";
+        if (cdPossessionText != null)
+            cdPossessionText.text = possessionCooldownTimer > 0f
+                ? $"Possess ({possessionCooldownTimer:F0}s)"
+                : "Possess ready";
     }
 
     // ─────────────────────────────────────────────────────────────

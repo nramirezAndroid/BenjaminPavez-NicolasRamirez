@@ -1,0 +1,754 @@
+fileFormatVersion: 2
+guid: 521193b4ff3603d4f8ddfebc02f9fa4c
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -9217887190567580187
+    second: weapon_smears_0
+  - first:
+      213: 4174411322794714890
+    second: weapon_smears_1
+  - first:
+      213: -2519063616965131129
+    second: weapon_smears_2
+  - first:
+      213: -8121882714127894119
+    second: weapon_smears_3
+  - first:
+      213: -6304870770421251615
+    second: weapon_smears_4
+  - first:
+      213: -5457181305612365608
+    second: weapon_smears_5
+  - first:
+      213: 7974357339545477052
+    second: weapon_smears_6
+  - first:
+      213: -3990895761448988039
+    second: weapon_smears_7
+  - first:
+      213: 7884920962778942625
+    second: weapon_smears_8
+  - first:
+      213: -840559292759537723
+    second: weapon_smears_9
+  - first:
+      213: 2958065160138366542
+    second: weapon_smears_10
+  - first:
+      213: 1485591802491935435
+    second: weapon_smears_11
+  - first:
+      213: -5685618980602522061
+    second: weapon_smears_12
+  - first:
+      213: -7985867446503273546
+    second: weapon_smears_13
+  - first:
+      213: 5631207208574947720
+    second: weapon_smears_14
+  - first:
+      213: 3677511586626762265
+    second: weapon_smears_15
+  - first:
+      213: 3422441366810108970
+    second: weapon_smears_16
+  - first:
+      213: 840350345968655327
+    second: weapon_smears_17
+  - first:
+      213: -8143733830242171687
+    second: weapon_smears_18
+  - first:
+      213: 5885909212438959929
+    second: weapon_smears_19
+  - first:
+      213: 2116323597715034764
+    second: weapon_smears_20
+  - first:
+      213: -7426268163314361825
+    second: weapon_smears_21
+  - first:
+      213: 1493781324847520302
+    second: weapon_smears_22
+  - first:
+      213: 1786847014178538251
+    second: weapon_smears_23
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 0
+    wrapV: 0
+    wrapW: 0
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 32
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: weapon_smears_0
+      rect:
+        serializedVersion: 2
+        x: 177
+        y: 61
+        width: 58
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5ed889a407c731080800000000000000
+      internalID: -9217887190567580187
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: weapon_smears_1
+      rect:
+        serializedVersion: 2
+        x: 291
+        y: 76
+        width: 64
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a072c892bfc7ee930800000000000000
+      internalID: 4174411322794714890
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: weapon_smears_2
+      rect:
+        serializedVersion: 2
+        x: 338
+        y: 77
+        width: 20
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 784ce28acfc7a0dd0800000000000000
+      internalID: -2519063616965131129
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: weapon_smears_3
+      rect:
+        serializedVersion: 2
+        x: 447
+        y: 76
+        width: 39
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 999750df3b6494f80800000000000000
+      internalID: -8121882714127894119
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: weapon_smears_4
+      rect:
+        serializedVersion: 2
+        x: 526
+        y: 64
+        width: 86
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1e14c4e50799088a0800000000000000
+      internalID: -6304870770421251615
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: weapon_smears_5
+      rect:
+        serializedVersion: 2
+        x: 568
+        y: 73
+        width: 41
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8d0921414823444b0800000000000000
+      internalID: -5457181305612365608
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: weapon_smears_6
+      rect:
+        serializedVersion: 2
+        x: 689
+        y: 52
+        width: 58
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cbf13a710cb9aae60800000000000000
+      internalID: 7974357339545477052
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: weapon_smears_7
+      rect:
+        serializedVersion: 2
+        x: 691
+        y: 77
+        width: 26
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 972983b137d7d98c0800000000000000
+      internalID: -3990895761448988039
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: weapon_smears_8
+      rect:
+        serializedVersion: 2
+        x: 710
+        y: 70
+        width: 34
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1ac487ce6dddc6d60800000000000000
+      internalID: 7884920962778942625
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: weapon_smears_9
+      rect:
+        serializedVersion: 2
+        x: 830
+        y: 68
+        width: 19
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5c70a66d6cbb554f0800000000000000
+      internalID: -840559292759537723
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: weapon_smears_10
+      rect:
+        serializedVersion: 2
+        x: 859
+        y: 68
+        width: 15
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e4e918437982d0920800000000000000
+      internalID: 2958065160138366542
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: weapon_smears_11
+      rect:
+        serializedVersion: 2
+        x: 959
+        y: 49
+        width: 39
+        height: 31
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bca93c49fd1ed9410800000000000000
+      internalID: 1485591802491935435
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: weapon_smears_12
+      rect:
+        serializedVersion: 2
+        x: 14
+        y: 53
+        width: 86
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 336d7fc29af9811b0800000000000000
+      internalID: -5685618980602522061
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: weapon_smears_13
+      rect:
+        serializedVersion: 2
+        x: 56
+        y: 50
+        width: 41
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6bb01db4edf7c2190800000000000000
+      internalID: -7985867446503273546
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: weapon_smears_14
+      rect:
+        serializedVersion: 2
+        x: 179
+        y: 57
+        width: 26
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8819abbee11162e40800000000000000
+      internalID: 5631207208574947720
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: weapon_smears_15
+      rect:
+        serializedVersion: 2
+        x: 198
+        y: 55
+        width: 34
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9167542cd45290330800000000000000
+      internalID: 3677511586626762265
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: weapon_smears_16
+      rect:
+        serializedVersion: 2
+        x: 318
+        y: 59
+        width: 19
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a24a15d4a44fe7f20800000000000000
+      internalID: 3422441366810108970
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: weapon_smears_17
+      rect:
+        serializedVersion: 2
+        x: 342
+        y: 65
+        width: 22
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fdb9652ff2689ab00800000000000000
+      internalID: 840350345968655327
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: weapon_smears_18
+      rect:
+        serializedVersion: 2
+        x: 347
+        y: 62
+        width: 15
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9d4851f8a35abfe80800000000000000
+      internalID: -8143733830242171687
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: weapon_smears_19
+      rect:
+        serializedVersion: 2
+        x: 453
+        y: 59
+        width: 39
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9379f9b6e33fea150800000000000000
+      internalID: 5885909212438959929
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: weapon_smears_20
+      rect:
+        serializedVersion: 2
+        x: 803
+        y: 49
+        width: 64
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c82d49f6911be5d10800000000000000
+      internalID: 2116323597715034764
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: weapon_smears_21
+      rect:
+        serializedVersion: 2
+        x: 850
+        y: 51
+        width: 20
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f1adad6937890f890800000000000000
+      internalID: -7426268163314361825
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: weapon_smears_22
+      rect:
+        serializedVersion: 2
+        x: 854
+        y: 65
+        width: 22
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e2a16a7533afab410800000000000000
+      internalID: 1493781324847520302
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: weapon_smears_23
+      rect:
+        serializedVersion: 2
+        x: 989
+        y: 65
+        width: 15
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b03441c64e72cc810800000000000000
+      internalID: 1786847014178538251
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      weapon_smears_0: -9217887190567580187
+      weapon_smears_1: 4174411322794714890
+      weapon_smears_10: 2958065160138366542
+      weapon_smears_11: 1485591802491935435
+      weapon_smears_12: -5685618980602522061
+      weapon_smears_13: -7985867446503273546
+      weapon_smears_14: 5631207208574947720
+      weapon_smears_15: 3677511586626762265
+      weapon_smears_16: 3422441366810108970
+      weapon_smears_17: 840350345968655327
+      weapon_smears_18: -8143733830242171687
+      weapon_smears_19: 5885909212438959929
+      weapon_smears_2: -2519063616965131129
+      weapon_smears_20: 2116323597715034764
+      weapon_smears_21: -7426268163314361825
+      weapon_smears_22: 1493781324847520302
+      weapon_smears_23: 1786847014178538251
+      weapon_smears_3: -8121882714127894119
+      weapon_smears_4: -6304870770421251615
+      weapon_smears_5: -5457181305612365608
+      weapon_smears_6: 7974357339545477052
+      weapon_smears_7: -3990895761448988039
+      weapon_smears_8: 7884920962778942625
+      weapon_smears_9: -840559292759537723
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

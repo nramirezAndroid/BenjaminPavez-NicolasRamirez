@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using TMPro;
 using Unity.Netcode;
 
 // CoopManager es MonoBehaviour (no NetworkBehaviour) porque usa DontDestroyOnLoad en Awake,
@@ -16,15 +15,7 @@ public class CoopManager : MonoBehaviour
     [SerializeField] private int levelSceneIndex;
 
     [Header("UI cooperativa")]
-    [SerializeField] private TextMeshProUGUI modeText;
-    [SerializeField] private TextMeshProUGUI statusText;
-    [SerializeField] private GameObject resultsPanel;
-    [SerializeField] private TextMeshProUGUI resultsText;
     public GameObject p2HUD;              //panel con controles de P2 (buffos, trampas)
-
-    // Estado de conexión local (no sincronizado por red; el HOST lo gestiona)
-    private bool p1Connected = false;
-    private bool p2Connected = false;
 
     void Awake()
     {
@@ -41,11 +32,7 @@ public class CoopManager : MonoBehaviour
             // Al entrar a una nueva escena se instancia un nuevo CoopManager con las
             // referencias correctas; las copiamos aquí antes de destruirlo para que
             // MostrarVictoriaLocal/MostrarDerrotaLocal funcionen en la escena actual.
-            if (resultsPanel != null) instance.resultsPanel = this.resultsPanel;
-            if (resultsText  != null) instance.resultsText  = this.resultsText;
-            if (modeText     != null) instance.modeText     = this.modeText;
-            if (statusText   != null) instance.statusText   = this.statusText;
-            if (p2HUD        != null) instance.p2HUD        = this.p2HUD;
+            if (p2HUD != null) instance.p2HUD = this.p2HUD;
 
             Destroy(gameObject);
             return;
@@ -54,30 +41,13 @@ public class CoopManager : MonoBehaviour
 
     void Start()
     {
-        if (modeText != null)
-            modeText.text = "Modo Cooperativo";
-
         if (p2HUD != null)
             p2HUD.SetActive(true);
-
-        RefreshStatusUI();
     }
 
-    public void RegisterPlayer1()
-    {
-        bool esServidor = NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer;
-        if (!esServidor) return;
-        p1Connected = true;
-        RefreshStatusUI();
-    }
+    public void RegisterPlayer1() { }
 
-    public void RegisterPlayer2()
-    {
-        bool esServidor = NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer;
-        if (!esServidor) return;
-        p2Connected = true;
-        RefreshStatusUI();
-    }
+    public void RegisterPlayer2() { }
 
     public void OnGoalReached(float completionTime, bool esVictoriaFinal, string nombreSiguienteNivel = null)
     {
@@ -155,29 +125,10 @@ public class CoopManager : MonoBehaviour
     //No usa ClientRpc porque CoopManager no está spawneado como NetworkObject.
     public void MostrarVictoriaLocal(float completionTime)
     {
-        if (resultsPanel != null)
-        {
-            // Panel dedicado de CoopManager asignado en el Inspector → usarlo.
-            resultsPanel.SetActive(true);
-
-            int minutes = Mathf.FloorToInt(completionTime / 60f);
-            int seconds = Mathf.FloorToInt(completionTime % 60f);
-            string timeStr = $"{minutes:00}:{seconds:00}";
-
-            if (resultsText != null)
-                resultsText.text = $"¡Gracias por jugar!\nTiempo: {timeStr}\n¡Bien hecho, equipo!";
-        }
-        else if (GameManager.instance != null)
-        {
-            // Fallback: el panel dedicado no está asignado (campo null en el prefab).
-            // Reutilizamos el LvlComplete del GameManager, que ya está asignado en Level 3.
-            // WinLevel() activa el panel, pausa el audio y pone Time.timeScale = 0.
+        if (GameManager.instance != null)
             GameManager.instance.WinLevel();
-        }
         else
-        {
-            Debug.LogWarning("[CoopManager] MostrarVictoriaLocal: ni resultsPanel ni GameManager disponibles.");
-        }
+            Debug.LogWarning("[CoopManager] MostrarVictoriaLocal: GameManager no disponible.");
     }
 
     public void OnPlayer1Died()
@@ -197,12 +148,9 @@ public class CoopManager : MonoBehaviour
     }
 
     // Llamado localmente en HOST y vía PlayerController.MostrarDerrotaClientRpc en CLIENTE.
-    public void MostrarDerrotaLocal()
-    {
-        if (resultsPanel != null) resultsPanel.SetActive(true);
-        if (resultsText  != null)
-            resultsText.text = "¡El equipo fue derrotado!\nInténtenlo de nuevo.";
-    }
+    // P1 reaparece automáticamente tras 1.5s (DeathRespawnRoutine), así que no se bloquea el juego.
+    // Si quieres mostrar una pantalla de derrota, conéctala aquí.
+    public void MostrarDerrotaLocal() { }
 
     public void RetryLevel()
     {
@@ -217,11 +165,4 @@ public class CoopManager : MonoBehaviour
         SceneManager.LoadScene(0);
     }
 
-    private void RefreshStatusUI()
-    {
-        if (statusText == null) return;
-        statusText.text = (p1Connected && p2Connected)
-            ? "✓ Ambos jugadores conectados"
-            : "Esperando jugadores...";
-    }
 }

@@ -238,13 +238,13 @@ public class MainMenuManager : MonoBehaviour
 
     public async void ConfirmarHost()
     {
-        MostrarEstadoConexion("Creando sala...");
+        MostrarEstadoConexion("Creating lobby...");
 
         string joinCode = await RelayManager.instance.CreateRelayHost();
 
         if (string.IsNullOrEmpty(joinCode))
         {
-            MostrarEstadoConexion("❌ No se pudo crear la sala. Revisa tu conexión a internet.");
+            MostrarEstadoConexion("❌ Could not create the lobby. Check your internet connection.");
             if (textoIPHost != null) textoIPHost.text = "";
             return;
         }
@@ -263,7 +263,7 @@ public class MainMenuManager : MonoBehaviour
             return;
 
         GUIUtility.systemCopyBuffer = RelayManager.instance.JoinCode;
-        MostrarEstadoConexion("✓ Código copiado al portapapeles.");
+        MostrarEstadoConexion("✓ Code copied to clipboard.");
     }
 
     public void ContinuarComoHost()
@@ -301,7 +301,7 @@ public class MainMenuManager : MonoBehaviour
 
         if (string.IsNullOrEmpty(codigo))
         {
-            MostrarEstadoConexion("⚠️ Escribe el código de sala.");
+            MostrarEstadoConexion("⚠️ Please enter the lobby code.");
             return;
         }
 
@@ -309,7 +309,7 @@ public class MainMenuManager : MonoBehaviour
         codigo = codigo.ToUpper();
         if (!System.Text.RegularExpressions.Regex.IsMatch(codigo, @"^[A-Z0-9]{1,6}$"))
         {
-            MostrarEstadoConexion("⚠️ Código inválido. Solo letras y números, máximo 6 caracteres.");
+            MostrarEstadoConexion("⚠️ Invalid code. Letters and numbers only, max 6 characters.");
             return;
         }
 
@@ -322,7 +322,7 @@ public class MainMenuManager : MonoBehaviour
         }
 
         SetBotonUnirseInteractable(false);
-        MostrarEstadoConexion("Conectando...");
+        MostrarEstadoConexion("Connecting...");
         if (loadingSpinner != null) loadingSpinner.SetActive(true);
 
         bool conectado = false;
@@ -349,7 +349,7 @@ public class MainMenuManager : MonoBehaviour
             if (RelayManager.instance != null) RelayManager.instance.PendingConnectionError = null;
 
             RestaurarPanelCliente();
-            MostrarEstadoConexion("❌ Código inválido o sala no encontrada.\nVerifica que el P1 ya haya creado la sala y vuelve a intentarlo.");
+            MostrarEstadoConexion("❌ Invalid code or lobby not found.\nMake sure P1 has already created a lobby and try again.");
             return;
         }
 
@@ -357,7 +357,7 @@ public class MainMenuManager : MonoBehaviour
         //reconectarse si quiere cambiar de código), y mostrar estado de espera.
         //Cuando el host inicie el nivel, NGO SceneManager cargará la escena automáticamente.
         NetworkModeData.modoSeleccionado = NetworkModeData.Mode.Cliente;
-        MostrarEstadoConexion("✓ Conectado. Esperando que el Host inicie el nivel...");
+        MostrarEstadoConexion("✓ Connected. Waiting for the Host to start the game...");
         SetBotonUnirseInteractable(true);
     }
 

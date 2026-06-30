@@ -93,22 +93,19 @@ public class EnemyLongSwordKnight : EnemyBase
 
         //⭐ Obtén al jugador de forma segura con GetPlayer1()
         PlayerController player = GetPlayer1();
-        if (player == null || player.IsDead) 
-            return;
-
-        //⭐ Usa GetDistanceToPlayer() en lugar de calcular manualmente
-        float distanceToPlayer = GetDistanceToPlayer();
+        float distanceToPlayer  = player != null && !player.IsDead
+            ? GetDistanceToPlayer()
+            : float.MaxValue;
 
         if (distanceToPlayer < detectionRadius)
         {
-            //⭐ Usa GetDirectionToPlayer() para obtener solo la dirección X
+            //── MODO PERSECUCIÓN ──────────────────────────────────────────────
+            isChasing = true;
+
             Vector3 directionToPlayer = GetDirectionToPlayer();
             float directionX = directionToPlayer.x;
 
-            if (directionX > 0 && !networkIsFacingRight.Value) 
-                networkIsFacingRight.Value = true;
-            else if (directionX < 0 && networkIsFacingRight.Value) 
-                networkIsFacingRight.Value = false;
+            SetFacing(directionX > 0);
 
             //comprueba si el jugador está en rango de ataque
             bool playerEnRango = attackPoint != null &&
@@ -126,24 +123,23 @@ public class EnemyLongSwordKnight : EnemyBase
                 if (!usarDeteccionDeBordes || CheckGroundAhead(directionX))
                 {
                     movementDirection = new Vector2(directionX, 0).normalized;
-                    enMovimiento = true;
+                    enMovimiento      = true;
                 }
                 else
-                {
                     enMovimiento = false;
-                }
             }
             else
-            {
                 enMovimiento = false;
-            }
-        }
-        else 
-        {
-            enMovimiento = false;
-        }
 
-        if (anim != null) anim.SetBool("enMovimiento", enMovimiento);
+            if (anim != null) anim.SetBool("enMovimiento", enMovimiento);
+        }
+        else
+        {
+            //── MODO PATRULLAJE ───────────────────────────────────────────────
+            isChasing    = false;
+            enMovimiento = false;
+            HandlePatrol();   //definido en EnemyBase
+        }
     }
 
     void FixedUpdate()
@@ -160,8 +156,10 @@ public class EnemyLongSwordKnight : EnemyBase
             return;
         }
 
-        if (enMovimiento)
+        if (isChasing && enMovimiento)
             rb.linearVelocity = new Vector2(movementDirection.x * speed, rb.linearVelocity.y);
+        else if (!isChasing && isPatrolMoving)
+            rb.linearVelocity = new Vector2(patrolMoveDir * patrolSpeed, rb.linearVelocity.y);
         else
             rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
     }
@@ -212,11 +210,24 @@ public class EnemyLongSwordKnight : EnemyBase
         if (anim != null) anim.SetTrigger("Attack"); 
     }
 
+    // ─── Overrides de EnemyBase ───────────────────────────────────────────────
+
+    protected override void SetFacing(bool facingRight)
+    {
+        if (facingRight  && !networkIsFacingRight.Value) networkIsFacingRight.Value = true;
+        if (!facingRight &&  networkIsFacingRight.Value) networkIsFacingRight.Value = false;
+    }
+
+    protected override bool CheckPatrolGroundAhead(float dirX)
+        => !usarDeteccionDeBordes || CheckGroundAhead(dirX);
+
+    // ─── Helpers privados ─────────────────────────────────────────────────────
+
     //evento que se ejecuta en las pantallas de todos los jugadores cuando el servidor cambia la dirección
     private void OnFacingRightChanged(bool previousValue, bool isRight)
     {
         Vector3 localScale = transform.localScale;
-        localScale.x = isRight ? -Mathf.Abs(localScale.x) : Mathf.Abs(localScale.x); 
+        localScale.x = isRight ? -Mathf.Abs(localScale.x) : Mathf.Abs(localScale.x);
         transform.localScale = localScale;
     }
 

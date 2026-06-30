@@ -109,6 +109,20 @@ public partial class PlayerController : NetworkBehaviour
             Debug.Log("Partida Cargada - Jugador con vida: " + networkHealth.Value);
         }
 
+        //La barra de vida de P1 debe verse correctamente en TODAS las máquinas
+        //(incluido P2 / cliente). La buscamos aquí para todos y nos suscribimos al
+        //NetworkVariable para actualizarla cada vez que cambie sin depender de Update().
+        if (healthImage == null)
+        {
+            GameObject obj = GameObject.Find("Health");
+            if (obj != null) healthImage = obj.GetComponent<Image>();
+        }
+        networkHealth.OnValueChanged += (_, newVal) =>
+        {
+            if (healthImage != null)
+                healthImage.fillAmount = (float)newVal / maxHealth;
+        };
+
         if (IsOwner)
         {
             CameraFollow cam = FindAnyObjectByType<CameraFollow>();
@@ -235,8 +249,11 @@ public partial class PlayerController : NetworkBehaviour
         soundCtrl.PlayMuerte();
         isDead = true;
 
-        if (IsServer && GameManager.instance != null) GameManager.instance.ModificarTiempo(90f);
-        if (IsServer && CoopManager.instance  != null) CoopManager.instance.OnPlayer1Died();
+        //ModificarTiempo corre en TODAS las máquinas: cada cliente tiene su propio GameManager
+        //y debe reflejar la penalización de tiempo localmente.
+        if (GameManager.instance != null) GameManager.instance.ModificarTiempo(90f);
+        //OnPlayer1Died solo lo ejecuta el servidor (tiene lógica de red interna)
+        if (IsServer && CoopManager.instance != null) CoopManager.instance.OnPlayer1Died();
 
         if (animator != null) animator.SetTrigger("Die");
         rb.linearVelocity = Vector2.zero;

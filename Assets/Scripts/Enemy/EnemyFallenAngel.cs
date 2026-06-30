@@ -75,16 +75,24 @@ public class EnemyFlyingShooter : EnemyBase
 
         if (distanceToPlayer <= detectionRange)
         {
+            //── MODO PERSECUCIÓN ──────────────────────────────────────────────
+            isChasing = true;
             ManejarGiroMirada(player);
             ManejarMovimientoVolador(player);
             ManejarTemporizadorDisparo(player);
         }
         else
         {
+            //── MODO PATRULLAJE ───────────────────────────────────────────────
+            // HandlePatrol() actualiza patrolMoveDir e isPatrolMoving.
+            // Aplicamos la velocidad X de patrullaje manteniendo el flote sinusoidal en Y.
+            isChasing = false;
+            HandlePatrol();
             if (rb != null)
-            {
-                rb.linearVelocity = new Vector2(0f, Mathf.Sin(Time.time * waveSpeed) * waveMagnitude * 0.5f);
-            }
+                rb.linearVelocity = new Vector2(
+                    patrolMoveDir * patrolSpeed,
+                    Mathf.Sin(Time.time * waveSpeed) * waveMagnitude * 0.5f
+                );
         }
     }
 
@@ -155,6 +163,17 @@ public class EnemyFlyingShooter : EnemyBase
         localScale.x *= -1;
         transform.localScale = localScale;
     }
+
+    // ─── Overrides de EnemyBase ───────────────────────────────────────────────
+
+    // El volador no usa NetworkVariable de dirección: reutiliza su propio sistema Flip().
+    protected override void SetFacing(bool facingRight)
+    {
+        if (facingRight != isFacingRight) Flip();
+    }
+
+    // Sin detección de bordes: vuela sobre vacíos sin problema.
+    // CheckPatrolGroundAhead devuelve true por defecto en EnemyBase, no hace falta override.
 
     protected override void OnTakeDamageLocal(Vector3 sourcePosition)
     {
