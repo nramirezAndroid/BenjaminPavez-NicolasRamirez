@@ -167,7 +167,7 @@ Assets/
 
 **Course:** Programación de Videojuegos — IEI-061  
 **Instructor:** Leopoldo Esteban Rodríguez Bravo  
-**Institution:** INACAP Iquique · 2026
+**Institution:** Santo Tomas Iquique · 2026
 
 ---
 
