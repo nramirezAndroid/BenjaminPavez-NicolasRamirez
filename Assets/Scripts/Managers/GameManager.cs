@@ -261,7 +261,7 @@ public class GameManager : MonoBehaviour
         }
 
         if (finalTimeText != null)
-            finalTimeText.text = "Tiempo: " + GetTimeString();
+            finalTimeText.text = "Time: " + GetTimeString();
 
         // Sobreescribir el texto de victoria si está configurado
         if (finalMessageText != null && !string.IsNullOrEmpty(mensajeVictoriaFinal))

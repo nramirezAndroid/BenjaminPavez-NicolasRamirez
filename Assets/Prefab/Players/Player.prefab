@@ -429,7 +429,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 256
   attackDamage: 40
-  attackCooldown: 0.8
+  attackCooldown: 1.5
   knockbackForceX: 8
   knockbackForceY: 5
   knockbackDuration: 0.2
