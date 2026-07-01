@@ -9,12 +9,12 @@ public class LoadingScreenManager : MonoBehaviour
     public static LoadingScreenManager Instance;
 
     [Header("Referencias UI")]
-    [SerializeField] private GameObject loadingCanvas; 
-    [SerializeField] private Slider progressBar;       
-    [SerializeField] private TMP_Text progressText;    
+    [SerializeField] private GameObject loadingCanvas;
+    [SerializeField] private Slider progressBar;
+    [SerializeField] private TMP_Text progressText;
 
     [Header("Ajustes de Velocidad")]
-    [SerializeField] private float barFillSpeed = 1.2f; 
+    [SerializeField] private float barFillSpeed = 1.2f;
 
     private void Awake()
     {
@@ -39,23 +39,29 @@ public class LoadingScreenManager : MonoBehaviour
         StartCoroutine(LoadSceneAsync(sceneBuildIndex));
     }
 
-    //Corutina para Carga por Nombre
+    //corutina para Carga por Nombre
     private IEnumerator LoadSceneAsync(string sceneName)
     {
         AsyncOperation operation = SceneManager.LoadSceneAsync(sceneName);
         yield return StartCoroutine(LoadingLoop(operation));
     }
 
-    //Corutina para Carga por Índice
+    //corutina para Carga por Índice
     private IEnumerator LoadSceneAsync(int sceneBuildIndex)
     {
         AsyncOperation operation = SceneManager.LoadSceneAsync(sceneBuildIndex);
         yield return StartCoroutine(LoadingLoop(operation));
     }
 
-    //Bucle unificado que procesa la barra de carga de forma suave
+    //bucle unificado que procesa la barra de carga de forma suave
     private IEnumerator LoadingLoop(AsyncOperation operation)
     {
+        if (operation == null)
+        {
+            Debug.LogError("[LoadingScreenManager] La escena no existe en Build Settings. Agrégala desde File → Build Profiles.");
+            yield break;
+        }
+
         loadingCanvas.SetActive(true);
         progressBar.value = 0f;
         progressText.text = "0%";
@@ -67,7 +73,7 @@ public class LoadingScreenManager : MonoBehaviour
         {
             float realProgress = Mathf.Clamp01(operation.progress / 0.9f);
             fakeProgress = Mathf.MoveTowards(fakeProgress, realProgress, Time.unscaledDeltaTime * barFillSpeed);
-            
+
             progressBar.value = fakeProgress;
             progressText.text = (fakeProgress * 100f).ToString("0") + "%";
 

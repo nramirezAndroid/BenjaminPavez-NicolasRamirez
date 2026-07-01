@@ -20,7 +20,7 @@ public class Dialogue : MonoBehaviour
     private bool isPlayerInRange;
     private bool didDialogueStart;
     private int lineIndex;
-    private PlayerControllerComplete playerScript;
+    private PlayerController playerScript;
 
     void Update()
     {
@@ -49,8 +49,8 @@ public class Dialogue : MonoBehaviour
         dialogueMark.SetActive(false);
         lineIndex = 0;
         
-        //Avisa al jugador que se quede bloqueado
-        if (playerScript != null) playerScript.isTalking = true;
+        //avisa al jugador que se quede bloqueado
+        if (playerScript != null) playerScript.IsTalking = true;
 
         StartCoroutine(ShowLine());
     }
@@ -68,8 +68,7 @@ public class Dialogue : MonoBehaviour
             dialoguePanel.SetActive(false);
             if (isPlayerInRange) dialogueMark.SetActive(true);
 
-            // DESBLOQUEAR AL JUGADOR
-            if (playerScript != null) playerScript.isTalking = false;
+            if (playerScript != null) playerScript.IsTalking = false;
         }
     }
 
@@ -79,7 +78,7 @@ public class Dialogue : MonoBehaviour
         foreach (char ch in dialogueLines[lineIndex])
         {
             dialogueText.text += ch;
-            //Usa WaitForSeconds normal porque ya no pausamos el tiempo global
+            //usa WaitForSeconds normal porque ya no pausamos el tiempo global
             yield return new WaitForSeconds(typingTime);
         }
     }
@@ -91,8 +90,8 @@ public class Dialogue : MonoBehaviour
             isPlayerInRange = true;
             dialogueMark.SetActive(true);
             
-            //Obtiene el script del jugador al entrar en rango
-            playerScript = collision.GetComponent<PlayerControllerComplete>();
+            //obtiene el script del jugador al entrar en rango
+            playerScript = collision.GetComponent<PlayerController>();
 
             if (audioSource != null && soundOnAppear != null)
                 audioSource.PlayOneShot(soundOnAppear);
@@ -107,7 +106,7 @@ public class Dialogue : MonoBehaviour
             dialogueMark.SetActive(false);
             
             //si el jugador se sale (por si acaso), desbloqueamos
-            if (playerScript != null) playerScript.isTalking = false;
+            if (playerScript != null) playerScript.IsTalking = false;
             
             didDialogueStart = false;
             dialoguePanel.SetActive(false);

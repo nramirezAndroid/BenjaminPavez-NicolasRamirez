@@ -1,51 +1,54 @@
 using System.Collections;
 using UnityEngine;
-
+using Unity.Netcode; 
 
 public class EnemyFlyingShooter : EnemyBase
 {
     [Header("Referencias de Ataque")]
-    public Transform player;
-    public GameObject projectilePrefab;
-    public Transform firePoint;
+    [SerializeField] private GameObject projectilePrefab;
+    [SerializeField] private Transform firePoint;
 
     [Header("Configuración de Vuelo")]
-    public float detectionRange = 12f;   //Radio de visión para perseguir
-    public float speed = 4f;            //Velocidad de traslación
-    public float followDistance = 5f;    //Distancia que mantendrá flotando ante el jugador
+    [SerializeField] private float detectionRange;
+    [SerializeField] private float speed;
+    [SerializeField] private float followDistance;
 
-    [Header("Efecto de Flote Sinusoidal (Estilo Castlevania)")]
-    public float waveSpeed = 3f;        //Qué tan rápido ondula de arriba a abajo
-    public float waveMagnitude = 1f;    //Amplitud de la onda de flote
+    [Header("Efecto de Flote Sinusoidal")]
+    [SerializeField] private float waveSpeed;
+    [SerializeField] private float waveMagnitude;
 
     [Header("Configuración de Disparo")]
-    public float fireCooldown = 2f;     //Segundos entre proyectiles
+    [SerializeField] private float fireCooldown;
     private float fireTimer;
 
     [Header("Efecto Visual de Daño")]
-    public Color flashColor = Color.red;
-    public float flashDuration = 0.1f;
-    private Color originalColor;
+    [SerializeField] private Color flashColor;
+    [SerializeField] private float flashDuration;
 
     private bool isFacingRight = false;
     private float timeCounter;
 
     protected override void Start()
     {
-        health = 30;           //Vida del enemigo flotante
-        contactDamage = 10;    //Daño si toca al player
+        maxHealth = 30; 
+        contactDamage = 10;    
         base.Start(); 
 
-        if (spriteRenderer != null) originalColor = spriteRenderer.color;
-
-        //Desactiva la gravedad inicial para permitir el vuelo libre
         if (rb != null) rb.gravityScale = 0f;
-
-        //Búsqueda automatizada del Player por Tag
-        if (player == null)
+        
+        //⭐ BUSCA el FirePoint automáticamente en los children
+        if (firePoint == null)
         {
-            GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
-            if (playerObj != null) player = playerObj.transform;
+            firePoint = transform.Find("FirePoint");
+            
+            if (firePoint == null)
+            {
+                Debug.LogWarning($"[EnemyFlyingShooter] {gameObject.name} - FirePoint no encontrado en children!");
+            }
+            else
+            {
+                Debug.Log($"[EnemyFlyingShooter] {gameObject.name} - FirePoint encontrado automáticamente");
+            }
         }
 
         fireTimer = fireCooldown;
@@ -53,36 +56,53 @@ public class EnemyFlyingShooter : EnemyBase
 
     void Update()
     {
-        //Si el enemigo muere o está aturdido, congela el movimiento
+        //⭐ CRÍTICO: Solo el servidor ejecuta IA
+        if (!IsServer) return;
+
+        if (networkIsPossessed.Value) return;
+
+        //⭐ Obtén al jugador de forma segura con GetPlayer1()
+        PlayerController player = GetPlayer1();
+        
         if (isDead || isStunned || player == null)
         {
             if (rb != null && !isDead) rb.linearVelocity = Vector2.zero;
             return;
         }
 
-        float distanceToPlayer = Vector2.Distance(transform.position, player.position);
+        //⭐ Usa GetDistanceToPlayer() en lugar de calcular manualmente
+        float distanceToPlayer = GetDistanceToPlayer();
 
         if (distanceToPlayer <= detectionRange)
         {
-            ManejarGiroMirada();
-            ManejarMovimientoVolador();
-            ManejarTemporizadorDisparo();
+            //── MODO PERSECUCIÓN ──────────────────────────────────────────────
+            isChasing = true;
+            ManejarGiroMirada(player);
+            ManejarMovimientoVolador(player);
+            ManejarTemporizadorDisparo(player);
         }
         else
         {
-            //Estado de reposo (Idle): Flota suavemente arriba y abajo en su lugar usando linearVelocity
+            //── MODO PATRULLAJE ───────────────────────────────────────────────
+            // HandlePatrol() actualiza patrolMoveDir e isPatrolMoving.
+            // Aplicamos la velocidad X de patrullaje manteniendo el flote sinusoidal en Y.
+            isChasing = false;
+            HandlePatrol();
             if (rb != null)
-            {
-                rb.linearVelocity = new Vector2(0f, Mathf.Sin(Time.time * waveSpeed) * waveMagnitude * 0.5f);
-            }
-            
+                rb.linearVelocity = new Vector2(
+                    patrolMoveDir * patrolSpeed,
+                    Mathf.Sin(Time.time * waveSpeed) * waveMagnitude * 0.5f
+                );
         }
     }
 
-    void ManejarMovimientoVolador()
+    void ManejarMovimientoVolador(PlayerController player)
     {
-        Vector2 direccionAlPlayer = (player.position - transform.position).normalized;
-        Vector2 posicionObjetivo = (Vector2)player.position - (direccionAlPlayer * followDistance);
+        if (player == null) return;
+
+        //⭐ Usa GetDirectionToPlayer() para obtener la dirección
+        Vector2 direccionAlPlayer = GetDirectionToPlayer();
+        Vector2 posicionObjetivo = (Vector2)player.transform.position - (direccionAlPlayer * followDistance);
         Vector2 movimientoBase = (posicionObjetivo - (Vector2)transform.position).normalized * speed;
 
         timeCounter += Time.deltaTime;
@@ -90,39 +110,50 @@ public class EnemyFlyingShooter : EnemyBase
 
         if (rb != null)
         {
-            //Aplica las físicas unificadas con la propiedad linearVelocity
             rb.linearVelocity = new Vector2(movimientoBase.x, movimientoBase.y + floteVertical);
-            
             
         }
     }
 
-    void ManejarTemporizadorDisparo()
+    void ManejarTemporizadorDisparo(PlayerController player)
     {
         fireTimer -= Time.deltaTime;
         if (fireTimer <= 0f)
         {
-            DispararProyectil();
+            DispararProyectil(player);
             fireTimer = fireCooldown;
         }
     }
 
-    void DispararProyectil()
+    void DispararProyectil(PlayerController player)
     {
-        if (projectilePrefab == null || firePoint == null) return;
+        if (projectilePrefab == null || firePoint == null || player == null) return;
 
-        if (anim != null) anim.SetTrigger("Attack");
+        //avisa a los clientes que disparen la animación
+        TriggerAttackAnimClientRpc();
 
-        Vector2 direccionDisparo = (player.position - firePoint.position).normalized;
+        Vector2 direccionDisparo = (player.transform.position - firePoint.position).normalized;
         float angulo = Mathf.Atan2(direccionDisparo.y, direccionDisparo.x) * Mathf.Rad2Deg;
 
-        Instantiate(projectilePrefab, firePoint.position, Quaternion.Euler(0, 0, angulo));
+        //el servidor instancia y Spawnea el proyectil en la red
+        GameObject projectile = Instantiate(projectilePrefab, firePoint.position, Quaternion.Euler(0, 0, angulo));
+        projectile.GetComponent<NetworkObject>().Spawn();
     }
 
-    void ManejarGiroMirada()
+    [ClientRpc]
+    private void TriggerAttackAnimClientRpc()
     {
-        if (player.position.x > transform.position.x && !isFacingRight) Flip();
-        else if (player.position.x < transform.position.x && isFacingRight) Flip();
+        if (anim != null) anim.SetTrigger("Attack");
+    }
+
+    void ManejarGiroMirada(PlayerController player)
+    {
+        if (player == null) return;
+        
+        if (player.transform.position.x > transform.position.x && !isFacingRight) 
+            Flip();
+        else if (player.transform.position.x < transform.position.x && isFacingRight) 
+            Flip();
     }
 
     private void Flip()
@@ -133,14 +164,20 @@ public class EnemyFlyingShooter : EnemyBase
         transform.localScale = localScale;
     }
 
-    //Polimorfismo para añadir el parpadeo rojo sobre tu sistema base
-    public override void TakeDamage(int damage, Transform damageSource)
+    // ─── Overrides de EnemyBase ───────────────────────────────────────────────
+
+    // El volador no usa NetworkVariable de dirección: reutiliza su propio sistema Flip().
+    protected override void SetFacing(bool facingRight)
     {
-        if (isDead) return;
+        if (facingRight != isFacingRight) Flip();
+    }
 
-        //Ejecuta el daño, el trigger "Hurt", el knockback y el stun
-        base.TakeDamage(damage, damageSource); 
+    // Sin detección de bordes: vuela sobre vacíos sin problema.
+    // CheckPatrolGroundAhead devuelve true por defecto en EnemyBase, no hace falta override.
 
+    protected override void OnTakeDamageLocal(Vector3 sourcePosition)
+    {
+        base.OnTakeDamageLocal(sourcePosition);
         if (spriteRenderer != null)
         {
             StopCoroutine(nameof(FlashRoutine));
@@ -148,17 +185,11 @@ public class EnemyFlyingShooter : EnemyBase
         }
     }
 
-    //Forzamos al enemigo a caer físicamente en lugar de flotar al morir
-    protected override void Die()
+    protected override void OnDieLocal()
     {
-        //Ejecuta el trigger "Die"
-        base.Die(); 
-        
-        this.enabled = false; 
-        if (rb != null)
-        {
-            rb.gravityScale = 1f;
-        }
+        base.OnDieLocal();
+        this.enabled = false;
+        if (rb != null) rb.gravityScale = 1f;
     }
 
     private IEnumerator FlashRoutine()

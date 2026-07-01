@@ -1,42 +1,64 @@
 using UnityEngine;
+using Unity.Netcode;
 
 public class EnemyProjectile : MonoBehaviour
 {
-    public float speed = 8f;
-    public int damage = 15;
-    public float lifeTime = 4f; //Tiempo antes de autodestruirse para no colapsar la RAM
+    [SerializeField] private float speed;
+    [SerializeField] private int damage;
+    [SerializeField] private float lifeTime;
 
     private Rigidbody2D rb;
+    private NetworkObject networkObj;
 
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+        networkObj = GetComponent<NetworkObject>();
         
-        //Al instanciarse, calcula su dirección frontal local en base al ángulo que le dio el ángel
         if (rb != null)
         {
             rb.linearVelocity = transform.right * speed;
         }
 
-        //Destrucción automática por tiempo por si sale del mapa
+        //auto-destrucción después de lifeTime
         Destroy(gameObject, lifeTime);
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        //Si impacta al jugador, le aplica daño
+        //si impacta al jugador
         if (collision.CompareTag("Player"))
         {
-            PlayerControllerComplete player = collision.GetComponent<PlayerControllerComplete>();
+            PlayerController player = collision.GetComponent<PlayerController>();
             if (player != null)
             {
                 player.TakeDamage(damage, transform);
             }
-            Destroy(gameObject); //Destruye la bala al impactar
+            DestroyProjectile();
+            return;
         }
         
+        //si impacta una pared
         if (collision.gameObject.layer == LayerMask.NameToLayer("Pared"))
         {
+            DestroyProjectile();
+            return;
+        }
+    }
+
+    void DestroyProjectile()
+    {
+        //en multiplayer, el servidor lo destruye
+        if (networkObj != null)
+        {
+            if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer)
+            {
+                networkObj.Despawn();
+            }
+        }
+        else
+        {
+            //en solitario, destrucción normal
             Destroy(gameObject);
         }
     }

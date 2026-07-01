@@ -1,19 +1,18 @@
 using System.Collections;
 using UnityEngine;
+using Unity.Netcode;
 
 public class EnemyLongSwordKnight : EnemyBase 
 {
     [Header("Configuración de Persecución (IA)")]
-    public Transform player;
-    public float detectionRadius = 7f; 
-    public float speed = 1.6f;
+    [SerializeField] private float detectionRadius;
+    [SerializeField] private float speed;
 
     [Header("IA: Detección de Borde")]
-
-    public bool usarDeteccionDeBordes = false; 
-    public float edgeCheckDistance = 0.5f;   
-    public float groundCheckDepth = 2.0f; 
-    public LayerMask groundLayer;            
+    [SerializeField] private bool usarDeteccionDeBordes;
+    [SerializeField] private float edgeCheckDistance;
+    [SerializeField] private float groundCheckDepth;
+    [SerializeField] private LayerMask groundLayer;
 
     [Header("Mecánica de Espadón (Tajo Estático Fijo)")]
     [SerializeField] private Transform attackPoint;
@@ -26,60 +25,89 @@ public class EnemyLongSwordKnight : EnemyBase
 
     private Vector2 movementDirection;
     private bool enMovimiento; 
-    private bool isFacingRight = false; 
 
     private float cooldownTimer;
     private bool isAttacking;
 
-    protected override void Start()
+    //sincroniza la dirección en la que mira para todos los clientes
+    public NetworkVariable<bool> networkIsFacingRight = new NetworkVariable<bool>(
+        false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server
+    );
+
+    public override void OnNetworkSpawn()
     {
-        health = 200;
-        base.Start(); 
-        
-        if (player == null)
-        {
-            GameObject p = GameObject.FindGameObjectWithTag("Player");
-            if (p != null) player = p.transform;
-        }
+        base.OnNetworkSpawn();
+        networkIsFacingRight.OnValueChanged += OnFacingRightChanged;
     }
 
-    public override void TakeDamage(int damage, Transform damageSource)
+    public override void OnNetworkDespawn()
     {
-        base.TakeDamage(damage, damageSource);
+        base.OnNetworkDespawn();
+        networkIsFacingRight.OnValueChanged -= OnFacingRightChanged;
+    }
 
-        //Si el enemigo murió, se apaga el trigger "Hurt" antes de que el Animator lo procese
-        if (isDead && anim != null)
-        {
-            anim.ResetTrigger("Hurt"); 
-        }
-
-        //Detiene su movimiento físico
-        if (rb != null && !isDead)
-            rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0f);
+    protected override void Start()
+    {
+        maxHealth = 200; 
+        base.Start(); 
+        //ya no buscamos al jugador aquí — GetPlayer1() lo encontrará en Update()
     }
 
     void Update()
     {
-        if (isDead || isStunned || player == null) 
+        //⭐ CRÍTICO: Solo el servidor ejecuta IA
+        if (!IsServer) return;
+
+        if (cooldownTimer > 0) cooldownTimer -= Time.deltaTime;
+
+        if (isDead || isStunned) 
         {
             enMovimiento = false;
             if (anim != null) anim.SetBool("enMovimiento", false);
             return; 
         }
 
-        if (cooldownTimer > 0) cooldownTimer -= Time.deltaTime;
-
-        float distanceToPlayer = Vector2.Distance(transform.position, player.position);
-
         if (isAttacking) return;
+
+        //si está poseído por P2, no ejecuta IA de persecución
+        if (networkIsPossessed.Value)
+        {
+            //el que controla (P2) puede presionar Espacio para atacar manualmente
+            if (Input.GetKeyDown(KeyCode.Space) && cooldownTimer <= 0)
+            {
+                StartCoroutine(SwordAttackRoutine());
+                return;
+            }
+
+            //sincroniza hacia dónde mira basado en cómo lo mueve el P2
+            if (rb.linearVelocity.x > 0.1f && !networkIsFacingRight.Value) 
+                networkIsFacingRight.Value = true;
+            else if (rb.linearVelocity.x < -0.1f && networkIsFacingRight.Value) 
+                networkIsFacingRight.Value = false;
+
+            //animación de caminar manual
+            if (anim != null) anim.SetBool("enMovimiento", Mathf.Abs(rb.linearVelocity.x) > 0.1f);
+            
+            return;
+        }
+
+        //⭐ Obtén al jugador de forma segura con GetPlayer1()
+        PlayerController player = GetPlayer1();
+        float distanceToPlayer  = player != null && !player.IsDead
+            ? GetDistanceToPlayer()
+            : float.MaxValue;
 
         if (distanceToPlayer < detectionRadius)
         {
-            float directionX = player.position.x - transform.position.x;
+            //── MODO PERSECUCIÓN ──────────────────────────────────────────────
+            isChasing = true;
 
-            if (directionX > 0 && !isFacingRight) Flip();
-            else if (directionX < 0 && isFacingRight) Flip();
+            Vector3 directionToPlayer = GetDirectionToPlayer();
+            float directionX = directionToPlayer.x;
 
+            SetFacing(directionX > 0);
+
+            //comprueba si el jugador está en rango de ataque
             bool playerEnRango = attackPoint != null &&
                                  Physics2D.OverlapCircle(attackPoint.position, attackRange, playerLayer) != null;
 
@@ -89,41 +117,49 @@ public class EnemyLongSwordKnight : EnemyBase
                 return;
             }
 
+            //si no está en rango de ataque, persigue
             if (!playerEnRango)
             {
                 if (!usarDeteccionDeBordes || CheckGroundAhead(directionX))
                 {
                     movementDirection = new Vector2(directionX, 0).normalized;
-                    enMovimiento = true;
+                    enMovimiento      = true;
                 }
                 else
-                {
                     enMovimiento = false;
-                }
             }
             else
-            {
                 enMovimiento = false;
-            }
-        }
-        else 
-        {
-            enMovimiento = false;
-        }
 
-        if (anim != null) anim.SetBool("enMovimiento", enMovimiento);
+            if (anim != null) anim.SetBool("enMovimiento", enMovimiento);
+        }
+        else
+        {
+            //── MODO PATRULLAJE ───────────────────────────────────────────────
+            isChasing    = false;
+            enMovimiento = false;
+            HandlePatrol();   //definido en EnemyBase
+        }
     }
 
     void FixedUpdate()
     {
+        //la física la sigue calculando exclusivamente el servidor
+        if (!IsServer) return;
+
+        //si está poseído, la física de movimiento horizontal la maneja EnemyBase mediante MoveAsPossessed()
+        if (networkIsPossessed.Value) return;
+
         if (isDead || isStunned || isAttacking)
         {
             rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
             return;
         }
 
-        if (enMovimiento)
+        if (isChasing && enMovimiento)
             rb.linearVelocity = new Vector2(movementDirection.x * speed, rb.linearVelocity.y);
+        else if (!isChasing && isPatrolMoving)
+            rb.linearVelocity = new Vector2(patrolMoveDir * patrolSpeed, rb.linearVelocity.y);
         else
             rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
     }
@@ -134,7 +170,9 @@ public class EnemyLongSwordKnight : EnemyBase
         enMovimiento = false;
         
         if (anim != null) anim.SetBool("enMovimiento", false);
-        if (anim != null) anim.SetTrigger("Attack"); 
+        
+        //dispara la animación en todos los clientes al mismo tiempo
+        TriggerAttackAnimClientRpc();
 
         yield return new WaitForSeconds(attackAnticipationTime);
 
@@ -146,15 +184,16 @@ public class EnemyLongSwordKnight : EnemyBase
 
         if (attackPoint == null)
         {
-            Debug.LogError("[EnemyLongSwordKnight] attackPoint no está asignado en el Inspector.");
+            Debug.LogError("[EnemyLongSwordKnight] attackPoint no está asignado.");
             isAttacking = false;
             yield break;
         }
 
+        //el Servidor calcula quién recibe el daño
         Collider2D hitPlayer = Physics2D.OverlapCircle(attackPoint.position, attackRange, playerLayer);
         if (hitPlayer != null)
         {
-            PlayerControllerComplete playerScript = hitPlayer.GetComponent<PlayerControllerComplete>();
+            PlayerController playerScript = hitPlayer.GetComponent<PlayerController>();
             if (playerScript != null)
                 playerScript.TakeDamage(swordDamage, transform);
         }
@@ -163,6 +202,33 @@ public class EnemyLongSwordKnight : EnemyBase
 
         isAttacking   = false;
         cooldownTimer = attackCooldown;
+    }
+
+    [ClientRpc]
+    private void TriggerAttackAnimClientRpc()
+    {
+        if (anim != null) anim.SetTrigger("Attack"); 
+    }
+
+    // ─── Overrides de EnemyBase ───────────────────────────────────────────────
+
+    protected override void SetFacing(bool facingRight)
+    {
+        if (facingRight  && !networkIsFacingRight.Value) networkIsFacingRight.Value = true;
+        if (!facingRight &&  networkIsFacingRight.Value) networkIsFacingRight.Value = false;
+    }
+
+    protected override bool CheckPatrolGroundAhead(float dirX)
+        => !usarDeteccionDeBordes || CheckGroundAhead(dirX);
+
+    // ─── Helpers privados ─────────────────────────────────────────────────────
+
+    //evento que se ejecuta en las pantallas de todos los jugadores cuando el servidor cambia la dirección
+    private void OnFacingRightChanged(bool previousValue, bool isRight)
+    {
+        Vector3 localScale = transform.localScale;
+        localScale.x = isRight ? -Mathf.Abs(localScale.x) : Mathf.Abs(localScale.x);
+        transform.localScale = localScale;
     }
 
     private bool CheckGroundAhead(float dirX)
@@ -176,12 +242,16 @@ public class EnemyLongSwordKnight : EnemyBase
         return hit.collider != null;
     }
 
-    private void Flip()
+    protected override void OnTakeDamageLocal(Vector3 sourcePosition)
     {
-        isFacingRight = !isFacingRight;
-        Vector3 localScale = transform.localScale;
-        localScale.x *= -1;
-        transform.localScale = localScale;
+        base.OnTakeDamageLocal(sourcePosition);
+        if (anim != null) anim.SetBool("enMovimiento", false);
+    }
+
+    protected override void OnDieLocal()
+    {
+        base.OnDieLocal();
+        if (anim != null) anim.ResetTrigger("Hurt");
     }
 
     private void OnDrawGizmosSelected()

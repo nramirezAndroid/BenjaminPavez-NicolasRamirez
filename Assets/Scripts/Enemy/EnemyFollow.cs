@@ -1,115 +1,160 @@
 using UnityEngine;
+using Unity.Netcode;
 
-public class EnemyFollow : EnemyBase 
+public class EnemyFollow : EnemyBase
 {
     [Header("Configuración de Seguimiento")]
-    public Transform player;
-    public float detectionRadius = 7f; //Aumentado para colinas
-    public float stoppingDistance = 0.8f; 
-    public float speed = 3f;
+    [SerializeField] private float detectionRadius;
+    [SerializeField] private float stoppingDistance;
+    [SerializeField] private float speed;
 
     [Header("IA: Detección de Borde")]
-    public float edgeCheckDistance = 0.5f;   
-    public float groundCheckDepth = 1.5f; //Rayo largo para pendientes
-    public LayerMask groundLayer;            
+    [SerializeField] private float edgeCheckDistance;
+    [SerializeField] private float groundCheckDepth;
+    [SerializeField] private LayerMask groundLayer;
 
     private Vector2 movement;
-    private bool EnMovimiento; 
-    private bool isFacingRight = false; 
+    private bool EnMovimiento;
+
+    public NetworkVariable<bool> networkIsFacingRight = new NetworkVariable<bool>(
+        false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server
+    );
+
+    public override void OnNetworkSpawn()
+    {
+        base.OnNetworkSpawn();
+        networkIsFacingRight.OnValueChanged += OnFacingRightChanged;
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        base.OnNetworkDespawn();
+        networkIsFacingRight.OnValueChanged -= OnFacingRightChanged;
+    }
 
     protected override void Start()
     {
-        base.Start(); 
-        if (player == null)
-        {
-            GameObject p = GameObject.FindGameObjectWithTag("Player");
-            if (p != null) player = p.transform;
-        }
+        base.Start();
     }
 
     void Update()
     {
-        if (isDead || isStunned || player == null) 
+        //⭐ CRÍTICO: Solo el servidor ejecuta IA
+        if (!IsServer) return;
+
+        if (isDead || isStunned)
         {
-            EnMovimiento = false;
+            EnMovimiento   = false;
+            isPatrolMoving = false;
             if (anim != null) anim.SetBool("enMovimiento", false);
-            return; 
+            return;
         }
 
-        float distanceToPlayer = Vector2.Distance(transform.position, player.position);
+        //si está poseído por P2, no ejecuta IA
+        if (networkIsPossessed.Value)
+        {
+            if (rb.linearVelocity.x > 0.1f  && !networkIsFacingRight.Value) networkIsFacingRight.Value = true;
+            else if (rb.linearVelocity.x < -0.1f &&  networkIsFacingRight.Value) networkIsFacingRight.Value = false;
+            if (anim != null) anim.SetBool("enMovimiento", Mathf.Abs(rb.linearVelocity.x) > 0.1f);
+            return;
+        }
+
+        PlayerController player = GetPlayer1();
+        float distanceToPlayer  = player != null && !player.IsDead
+            ? GetDistanceToPlayer()
+            : float.MaxValue;
 
         if (distanceToPlayer < detectionRadius)
         {
-            float directionX = player.position.x - transform.position.x;
+            //── MODO PERSECUCIÓN ──────────────────────────────────────────────
+            isChasing      = true;
+            isPatrolMoving = false;
 
-            if (directionX > 0 && !isFacingRight) Flip();
-            else if (directionX < 0 && isFacingRight) Flip();
+            Vector3 directionToPlayer = GetDirectionToPlayer();
+            float directionX = directionToPlayer.x;
 
-            //Movimiento solo si hay suelo
+            SetFacing(directionX > 0);
+
             if (distanceToPlayer > stoppingDistance)
             {
                 if (CheckGroundAhead(directionX))
                 {
-                    movement = new Vector2(directionX, 0).normalized;
+                    movement     = new Vector2(directionX, 0).normalized;
                     EnMovimiento = true;
                 }
                 else
-                {
-                    EnMovimiento = false; 
-                }
+                    EnMovimiento = false;
             }
-            else EnMovimiento = false;
-        }
-        else EnMovimiento = false;
+            else
+                EnMovimiento = false;
 
-        if (anim != null) anim.SetBool("enMovimiento", EnMovimiento);
+            if (anim != null) anim.SetBool("enMovimiento", EnMovimiento);
+        }
+        else
+        {
+            //── MODO PATRULLAJE ───────────────────────────────────────────────
+            isChasing    = false;
+            EnMovimiento = false;
+            HandlePatrol();   //definido en EnemyBase
+        }
     }
 
     void FixedUpdate()
     {
+        if (!IsServer) return;
+        if (networkIsPossessed.Value) return;
         if (isDead || isStunned) return;
 
-        if (EnMovimiento)
+        if (isChasing && EnMovimiento)
             rb.linearVelocity = new Vector2(movement.x * speed, rb.linearVelocity.y);
+        else if (!isChasing && isPatrolMoving)
+            rb.linearVelocity = new Vector2(patrolMoveDir * patrolSpeed, rb.linearVelocity.y);
         else
             rb.linearVelocity = new Vector2(0, rb.linearVelocity.y);
     }
 
+    // ─── Overrides de EnemyBase ───────────────────────────────────────────────
+
+    // Sincroniza la dirección por red para que todos los clientes vean el flip correcto.
+    protected override void SetFacing(bool facingRight)
+    {
+        if (facingRight  && !networkIsFacingRight.Value) networkIsFacingRight.Value = true;
+        if (!facingRight &&  networkIsFacingRight.Value) networkIsFacingRight.Value = false;
+    }
+
+    // Usa el mismo raycast de borde que la persecución.
+    protected override bool CheckPatrolGroundAhead(float dirX) => CheckGroundAhead(dirX);
+
+    // ─── Helpers privados ─────────────────────────────────────────────────────
+
     private bool CheckGroundAhead(float dirX)
     {
-        //Lanzamos el rayo desde un poco arriba para evitar errores en colinas
         Vector2 origin = new Vector2(
             transform.position.x + (dirX > 0 ? edgeCheckDistance : -edgeCheckDistance),
-            transform.position.y + 0.2f 
+            transform.position.y + 0.2f
         );
-
         RaycastHit2D hit = Physics2D.Raycast(origin, Vector2.down, groundCheckDepth, groundLayer);
         Debug.DrawRay(origin, Vector2.down * groundCheckDepth, hit.collider != null ? Color.green : Color.red);
-
         return hit.collider != null;
     }
 
-    private void Flip()
+    private void OnFacingRightChanged(bool previousValue, bool isRight)
     {
-        isFacingRight = !isFacingRight;
         Vector3 localScale = transform.localScale;
-        localScale.x *= -1;
+        localScale.x = isRight ? -Mathf.Abs(localScale.x) : Mathf.Abs(localScale.x);
         transform.localScale = localScale;
     }
 
-    private void OnCollisionEnter2D(Collision2D collision)
-{
-    if (isDead || isStunned) return;
-
-
-    if (collision.gameObject.CompareTag("Player"))
+    protected override void OnCollisionEnter2D(Collision2D collision)
     {
-        PlayerControllerComplete p = collision.gameObject.GetComponent<PlayerControllerComplete>();
-        if (p != null) 
+        base.OnCollisionEnter2D(collision);
+
+        if (!IsServer || isDead || isStunned) return;
+
+        if (!networkIsPossessed.Value && collision.gameObject.CompareTag("Player"))
         {
-            //Le pasa el daño personalizado desde la variable de EnemyBase
-            p.TakeDamage(contactDamage, transform); 
+            PlayerController p = collision.gameObject.GetComponent<PlayerController>();
+            if (p != null) p.TakeDamage(contactDamage, transform);
         }
     }
 }
-} 

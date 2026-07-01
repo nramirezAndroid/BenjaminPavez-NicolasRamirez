@@ -3,10 +3,10 @@ using UnityEngine;
 public class ColumnParallax : MonoBehaviour
 {
     [Header("Configuración de Movimiento")]
-    public float parallaxMultiplier = 0.02f; 
+    [SerializeField] private float parallaxMultiplier;
 
     [Header("Configuración de Textura")]
-    public float densidadX = 1f; 
+    [SerializeField] private float densidadX;
 
     private Material columnMaterial;
     private Transform camTransform;
@@ -15,31 +15,31 @@ public class ColumnParallax : MonoBehaviour
 
     void Start()
     {
-        //Obtiene el material del Quad
+        //obtiene el material del Quad
         columnMaterial = GetComponent<Renderer>().material;
         
-        //Ajusta la repetición inicial
+        //ajusta la repetición inicial
         columnMaterial.mainTextureScale = new Vector2(densidadX, 1f);
 
-        //Referencia a la cámara
+        //referencia a la cámara
         if (Camera.main != null) camTransform = Camera.main.transform;
         lastCamPosition = camTransform.position;
     }
 
     void LateUpdate()
     {
-        //Bloqueo por pausa
-        if (GameManager.instance != null && GameManager.instance.isPaused) return;
+        //bloqueo por pausa
+        if (GameManager.instance != null && GameManager.instance.IsPaused) return;
         if (camTransform == null) return;
 
         float deltaX = camTransform.position.x - lastCamPosition.x;
         offset += deltaX * parallaxMultiplier;
         columnMaterial.mainTextureOffset = new Vector2(offset, 0);
 
-        //Forzamos al objeto físico a seguir a la cámara en X e Y
+        //forzamos al objeto físico a seguir a la cámara en X e Y
         transform.position = new Vector3(camTransform.position.x, camTransform.position.y, transform.position.z);
 
-        //Actualizamos la última posición
+        //actualizamos la última posición
         lastCamPosition = camTransform.position;
     }
 }

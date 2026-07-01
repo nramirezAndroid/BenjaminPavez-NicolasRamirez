@@ -9,14 +9,14 @@ public class OptionsManager : MonoBehaviour
     private const string KEY_RES_HEIGHT = "opt_res_height";
 
     [Header("Volumen")]
-    public Slider volumeSlider;
-    public TextMeshProUGUI volumeLabel;
+    [SerializeField] private Slider volumeSlider;
+    [SerializeField] private TextMeshProUGUI volumeLabel;
 
     [Header("Resolucion")]
-    public Button btn1080p;
-    public Button btn720p;
-    public Image img1080p;
-    public Image img720p;
+    [SerializeField] private Button btn1080p;
+    [SerializeField] private Button btn720p;
+    [SerializeField] private Image img1080p;
+    [SerializeField] private Image img720p;
 
     [Header("Colores de seleccion")]
     public Color colorSeleccionado   = new Color(1f, 0.85f, 0f);
@@ -80,7 +80,7 @@ public class OptionsManager : MonoBehaviour
 
         if (resMatch.HasValue)
         {
-            //SetResolution con RefreshRate struct (API moderna, sin warnings)
+            //setResolution con RefreshRate struct (API moderna, sin warnings)
             Screen.SetResolution(resMatch.Value.width, resMatch.Value.height,
                                  FullScreenMode.ExclusiveFullScreen,
                                  resMatch.Value.refreshRateRatio);
@@ -138,7 +138,6 @@ public class OptionsManager : MonoBehaviour
         }
     }
 
-    // ─────────────────────────────────────────────────────────────
     public void OpenOptions()  => gameObject.SetActive(true);
     public void CloseOptions() => gameObject.SetActive(false);
 }
